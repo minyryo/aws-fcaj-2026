@@ -18,7 +18,37 @@ Open `http://localhost:1313` in your browser. The server live-reloads on file ch
 hugo
 ```
 
+## Deployment
+
+Live at: **https://minyryo.github.io/aws-fcaj-2026/**
+
+Deployed automatically via GitHub Actions (`.github/workflows/deploy.yml`) on every push to `main`.
+
 ## Changelog
+
+### 2026-06-27
+
+**Content: Week 2 Worklog (`content/1-Worklog/1.2-Week2/`)**
+- Added AWS Skill Builder learning achievements: Cloud Quest Cloud Practitioner (4 solutions — Networking Concepts, Cloud Computing Essentials, Computing Solutions, Cloud First Steps) with reputation points table; AWS Escape Room CLF-C02 exam prep.
+- Added polished team meeting minutes for 06/27/2026: Hieu presented payment logic and DB design; Danh's UI draft reviewed asynchronously; 6-track task distribution table (FE design/tech stack, BE tech stack, Hieu on Amplify + architecture, Thanh on Booking API, Nguyen on Auth API).
+- Rewritten VI file (`_index.vi.md`) to match EN file exactly: correct dates (22/06–27/06/2026), translated AWS Skill Builder section, translated meeting minutes, all deliverable tables.
+- Updated task table dates from 08/11–08/15/2025 (old placeholder) to 06/22–06/27/2026.
+
+---
+
+### 2026-06-22
+
+**GitHub Pages deployment**
+- Fixed CSS/JS and image loading broken by subpath deployment: replaced `relativeURLs = true` with `canonifyURLs = true` in `config.toml` — canonifyURLs prepends the full `baseURL` to all absolute paths in the HTML output, which is compatible with `hugo-theme-learn` and works correctly at a subpath.
+- Removed `--baseURL` override and `configure-pages` step from workflow — `config.toml` baseURL is now the single source of truth, eliminating the double-path bug (`/aws-fcaj-2026/aws-fcaj-2026/`).
+- Deleted duplicate `hugo.yml` workflow (was failing due to `publish_branch: main`).
+- Added `.gitignore`: `public/`, `resources/_gen/`, `.hugo_build.lock`, OS and editor files.
+
+**GitHub Actions workflow (`.github/workflows/deploy.yml`)**
+- Final working setup: Hugo extended v0.163.1, `actions/checkout@v4` with `submodules: recursive`, `actions/deploy-pages@v4`.
+- `baseURL` set to `https://minyryo.github.io/aws-fcaj-2026/` in `config.toml`.
+
+---
 
 ### 2026-06-20
 

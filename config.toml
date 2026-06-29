@@ -2,6 +2,7 @@ baseURL = "https://minyryo.github.io/aws-fcaj-2026/"
 relativeURLs = false
 canonifyURLs = true
 defaultContentLanguage = "en"
+buildFuture = true
 
 # Change the default theme to be use when building the site with Hugo
 theme = "hugo-theme-learn"
