@@ -6,10 +6,6 @@ chapter: false
 pre: " <b> 1.1. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
-
 ### Mục tiêu tuần 1:
 
 - Kết nối, làm quen với các thành viên trong First Cloud AI Journey.
@@ -20,12 +16,12 @@ pre: " <b> 1.1. </b> "
 
 ### Các công việc cần triển khai trong tuần này:
 
-| Thứ | Công việc | Ngày bắt đầu | Ngày hoàn thành | Nguồn tài liệu |
-| --- | --------- | ------------ | --------------- | -------------- |
-| 2 | - **Họp nhóm**: tham dự cuộc họp kick-off, trình bày và thống nhất đề xuất kiến trúc hybrid; phân công công việc cho các nhóm FE, BE và AWS Admin | 15/06/2026 | 15/06/2026 | |
-| 3 | - Nghiên cứu về kiến trúc monolith & serverless | 16/06/2026 | 16/06/2026 | |
-| 4 | - Đọc tổng quan các dịch vụ AWS được đề cập trong sơ đồ kiến trúc: <br>&emsp; + EC2, Lambda (Compute) <br>&emsp; + RDS PostgreSQL (Database) <br>&emsp; + API Gateway, ELB (Networking) <br>&emsp; + Cognito, IAM (Security & Identity) <br>&emsp; + SNS (Messaging) <br>&emsp; + S3 (Storage) <br>&emsp; + CloudWatch (Monitoring) | 17/06/2026 | 18/06/2026 | <https://cloudjourney.awsstudygroup.com/> |
-| 5 | - Tạo tài khoản AWS Free Tier | 19/06/2026 | 19/06/2026 | |
+| Thứ | Công việc                                                                                                                                                                                                                                                                                                                           | Ngày bắt đầu | Ngày hoàn thành | Nguồn tài liệu                            |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- | ----------------------------------------- |
+| 2   | - **Họp nhóm**: tham dự cuộc họp kick-off, trình bày và thống nhất đề xuất kiến trúc hybrid; phân công công việc cho các nhóm FE, BE và AWS Admin                                                                                                                                                                                   | 15/06/2026   | 15/06/2026      |                                           |
+| 3   | - Nghiên cứu về kiến trúc monolith & serverless                                                                                                                                                                                                                                                                                     | 16/06/2026   | 16/06/2026      |                                           |
+| 4   | - Đọc tổng quan các dịch vụ AWS được đề cập trong sơ đồ kiến trúc: <br>&emsp; + EC2, Lambda (Compute) <br>&emsp; + RDS PostgreSQL (Database) <br>&emsp; + API Gateway, ELB (Networking) <br>&emsp; + Cognito, IAM (Security & Identity) <br>&emsp; + SNS (Messaging) <br>&emsp; + S3 (Storage) <br>&emsp; + CloudWatch (Monitoring) | 17/06/2026   | 18/06/2026      | <https://cloudjourney.awsstudygroup.com/> |
+| 5   | - Tạo tài khoản AWS Free Tier                                                                                                                                                                                                                                                                                                       | 19/06/2026   | 19/06/2026      |                                           |
 
 ### Kết quả đạt được tuần 1:
 

@@ -6,10 +6,6 @@ chapter: false
 pre: " <b> 1.2. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
-
 ### Mục tiêu tuần 2:
 
 - Học sâu các dịch vụ AWS trên AWS Skill Builder để chuẩn bị cho chứng chỉ AWS Developer Associate.
@@ -122,12 +118,69 @@ Hoàn thành chế độ luyện tập đơn người chơi vào **24/06/2026** 
 
 #### Tài liệu API
 
-| #   | Endpoint                        | Method | Input                                                                                      | Output                                                                                                                     | Use Case                                                                                                                                                                                                                  |
-| --- | ------------------------------- | ------ | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `/api/v1/payments`              | `POST` | `booking_id` (UUID), `amount` (decimal), `payment_method` (string)                         | `payment_id` (UUID), `checkout_url` (string), `status: "PENDING"`                                                          | Người dùng khởi tạo thanh toán sau khi xác nhận đặt sân. Tạo bản ghi thanh toán trạng thái PENDING trong RDS và trả về URL thanh toán để chuyển hướng người dùng.                                                         |
-| 2   | `/api/v1/payments/webhook`      | `POST` | `payment_id` (UUID), `transaction_id` (string), `status` (string), `gateway_data` (object) | `{ success: boolean }`                                                                                                     | Cổng thanh toán thông báo kết quả giao dịch cho hệ thống. Đây là điểm vào của luồng serverless: API Gateway nhận callback → gọi Lambda cập nhật trạng thái thanh toán trong RDS → kích hoạt SNS thông báo cho người dùng. |
-| 3   | `/api/v1/payments/{payment_id}` | `GET`  | `payment_id` (path param), Bearer token (header)                                           | `payment_id`, `booking_id`, `amount`, `currency`, `status`, `payment_method`, `transaction_id`, `created_at`, `updated_at` | Người dùng hoặc admin kiểm tra trạng thái của một giao dịch cụ thể.                                                                                                                                                       |
-| 4   | `/api/v1/payments`              | `GET`  | Bearer token (header), `page` (int), `limit` (int)                                         | `{ data: [...payments], total, page, limit }`                                                                              | Người dùng xem lịch sử thanh toán với phân trang.                                                                                                                                                                         |
+<!--
+| # | Endpoint | Method | Input | Output | Use Case |
+|---|----------|--------|-------|--------|----------|
+| 1 | `/api/v1/payments` | `POST` | `booking_id` (UUID), `amount` (decimal), `payment_method` (string) | `payment_id` (UUID), `checkout_url` (string), `status: "PENDING"` | Người dùng khởi tạo thanh toán sau khi xác nhận đặt sân. Tạo bản ghi thanh toán trạng thái PENDING trong RDS và trả về URL thanh toán để chuyển hướng người dùng. |
+| 2 | `/api/v1/payments/webhook` | `POST` | `payment_id` (UUID), `transaction_id` (string), `status` (string), `gateway_data` (object) | `{ success: boolean }` | Cổng thanh toán thông báo kết quả giao dịch cho hệ thống. Đây là điểm vào của luồng serverless: API Gateway nhận callback → gọi Lambda cập nhật trạng thái thanh toán trong RDS → kích hoạt SNS thông báo cho người dùng. |
+| 3 | `/api/v1/payments/{payment_id}` | `GET` | `payment_id` (path param), Bearer token (header) | `payment_id`, `booking_id`, `amount`, `currency`, `status`, `payment_method`, `transaction_id`, `created_at`, `updated_at` | Người dùng hoặc admin kiểm tra trạng thái của một giao dịch cụ thể. |
+| 4 | `/api/v1/payments` | `GET` | Bearer token (header), `page` (int), `limit` (int) | `{ data: [...payments], total, page, limit }` | Người dùng xem lịch sử thanh toán với phân trang. |
+-->
+
+<table style="width:100%; table-layout:fixed; word-break:break-word;">
+  <colgroup>
+    <col style="width:3%">
+    <col style="width:15%">
+    <col style="width:5%">
+    <col style="width:20%">
+    <col style="width:15%">
+    <col style="width:42%">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Endpoint</th>
+      <th>Method</th>
+      <th>Input</th>
+      <th>Output</th>
+      <th>Use Case</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><code>/api/v1/payments</code></td>
+      <td><code>POST</code></td>
+      <td><code>booking_id</code> (UUID), <code>amount</code> (decimal), <code>payment_method</code> (string)</td>
+      <td><code>payment_id</code> (UUID), <code>checkout_url</code> (string), <code>status: "PENDING"</code></td>
+      <td>Người dùng khởi tạo thanh toán sau khi xác nhận đặt sân. Tạo bản ghi thanh toán trạng thái PENDING trong RDS và trả về URL thanh toán để chuyển hướng người dùng.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><code>/api/v1/payments/webhook</code></td>
+      <td><code>POST</code></td>
+      <td><code>payment_id</code> (UUID), <code>transaction_id</code> (string), <code>status</code> (string), <code>gateway_data</code> (object)</td>
+      <td><code>{ success: boolean }</code></td>
+      <td>Cổng thanh toán thông báo kết quả giao dịch cho hệ thống. Đây là điểm vào của luồng serverless: API Gateway nhận callback → gọi Lambda cập nhật trạng thái thanh toán trong RDS → kích hoạt SNS thông báo cho người dùng.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><code>/api/v1/payments/{payment_id}</code></td>
+      <td><code>GET</code></td>
+      <td><code>payment_id</code> (path param), Bearer token (header)</td>
+      <td><code>payment_id</code>, <code>booking_id</code>, <code>amount</code>, <code>currency</code>, <code>status</code>, <code>payment_method</code>, <code>transaction_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+      <td>Người dùng hoặc admin kiểm tra trạng thái của một giao dịch cụ thể.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><code>/api/v1/payments</code></td>
+      <td><code>GET</code></td>
+      <td>Bearer token (header), <code>page</code> (int), <code>limit</code> (int)</td>
+      <td><code>{ data: [...payments], total, page, limit }</code></td>
+      <td>Người dùng xem lịch sử thanh toán với phân trang.</td>
+    </tr>
+  </tbody>
+</table>
 
 #### Thiết kế Cơ sở dữ liệu
 

@@ -1,126 +1,61 @@
 ---
-title: "Event 1"
-date: 2024-01-01
+title: "Event 1 — Data Driven, AI Risen"
+date: 2026-06-27
 weight: 1
 chapter: false
 pre: " <b> 4.1. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy it verbatim** into your report, including this warning.
-{{% /notice %}}
+### Event Information
 
-# Summary Report: “GenAI-powered App-DB Modernization workshop”
+| Field | Details |
+|-------|---------|
+| **Event Name** | Data Driven, AI Risen |
+| **Date & Time** | 09:00, June 27, 2026 |
+| **Location** | Livestream |
+| **Role** | Attendee |
 
-### Event Objectives
+---
 
-- Share best practices in modern application design
-- Introduce Domain-Driven Design (DDD) and event-driven architecture
-- Provide guidance on selecting the right compute services
-- Present AI tools to support the development lifecycle
+### Event Description
 
-### Speakers
+The FCAJ Community Day in June 2026 featured five presentations focused on practical applications of Artificial Intelligence across cloud infrastructure, development, and enterprise workflows.
 
-- **Jignesh Shah** – Director, Open Source Databases
-- **Erica Liu** – Sr. GTM Specialist, AppMod
-- **Fabrianne Effendi** – Assc. Specialist SA, Serverless Amazon Web Services
+#### 1. Career Development and AI in Cloud Operations
+*Speaker: Steve Tran (Cloud Thinker)*
 
-### Key Highlights
+Steve traced his path from IT helpdesk to AWS Solution Architect, highlighting how AI is simultaneously accelerating coding speed while raising the bar for engineers managing complex, modernized systems. He introduced Cloud Thinker's AI agentic platform, which automates incident resolution, security testing, quality control, and FinOps (cloud cost optimization).
 
-#### Identifying the drawbacks of legacy application architecture
+#### 2. Building Voice AI Agents for the Vietnamese Market
+*Speakers: Hieu Nghi (Renova Cloud), Kiet (Student Video Group), Trung (R AI)*
 
-- Long product release cycles → Lost revenue/missed opportunities  
-- Inefficient operations → Reduced productivity, higher costs  
-- Non-compliance with security regulations → Security breaches, loss of reputation  
+The session featured a live demo of a Voice AI agent built on AWS Bedrock and examined the challenges of deploying voice agents in the Vietnamese enterprise context. Trung proposed a custom Speech-to-Text → LLM → Text-to-Speech pipeline to accurately handle regional accents, natural conversation interruptions, and enterprise tool-calling tasks such as automatically blocking a bank card.
 
-#### Transitioning to modern application architecture – Microservices
+#### 3. Automated Troubleshooting with AWS DevOps Agent
+*Speakers: Bao and Nguyen (Cloud Kinetics)*
 
-Migrating to a modular system — each function is an **independent service** communicating via **events**, built on three core pillars:
+The speakers demonstrated how the AWS DevOps Agent addresses fragmented logs and slow incident response by automatically investigating alerts, identifying root causes, and generating step-by-step mitigation plans. A live demo showed the agent diagnosing a simulated DDoS attack on an ECS-hosted e-commerce application in minutes rather than hours.
 
-- **Queue Management**: Handle asynchronous tasks  
-- **Caching Strategy**: Optimize performance  
-- **Message Handling**: Flexible inter-service communication  
+#### 4. Transforming Human Resources with Amazon Q
+*Speakers: Truong and Minh Anh (Noventiq)*
 
-#### Domain-Driven Design (DDD)
+Minh Anh outlined HR pain points such as manual CV screening and the risks of uploading applicant data to public AI tools, while Truong demonstrated Amazon Q as a secure, enterprise-customizable AI assistant. The live demo showed Amazon Q reading multiple candidate CVs, matching them against a Cloud Engineer job description, and producing a scored evaluation report automatically.
 
-- **Four-step method**: Identify domain events → arrange timeline → identify actors → define bounded contexts  
-- **Bookstore case study**: Demonstrates real-world DDD application  
-- **Context mapping**: 7 patterns for integrating bounded contexts  
+#### 5. Securing Amazon Q Connections with Private MCP Servers
+*Speakers: Toan Nguyen and Nghi*
 
-#### Event-Driven Architecture
+The session covered the security risks of exposing Model Context Protocol (MCP) servers — which connect AI assistants like Amazon Q to tools such as Jira, Gmail, or Zalo — to the public internet (DDoS, Man-in-the-Middle attacks). Toan detailed an architecture using AWS VPC connections, private subnets, interface endpoints, and Route 53 resolvers to ensure all AI queries and data traffic remain strictly within the private AWS network.
 
-- **3 integration patterns**: Publish/Subscribe, Point-to-point, Streaming  
-- **Benefits**: Loose coupling, scalability, resilience  
-- **Sync vs async comparison**: Understanding the trade-offs  
+---
 
-#### Compute Evolution
+### Outcomes and Value Gained
 
-- **Shared Responsibility Model**: EC2 → ECS → Fargate → Lambda  
-- **Serverless benefits**: No server management, auto-scaling, pay-for-value  
-- **Functions vs Containers**: Criteria for appropriate choice  
+- **Broader view of AI's impact on cloud careers:** The career talk reframed how I think about upskilling — AI tools raise baseline productivity but also demand deeper system-level expertise, which directly motivates investing more in AWS certification study.
 
-#### Amazon Q Developer
+- **Practical architecture insight for voice/notification features:** The Voice AI session's custom Vietnamese pipeline (STT → LLM → TTS) is relevant context for our court booking app — if we extend notifications beyond SNS to voice or chat, we now understand the non-trivial engineering involved.
 
-- **SDLC automation**: From planning to maintenance  
-- **Code transformation**: Java upgrade, .NET modernization  
-- **AWS Transform agents**: VMware, Mainframe, .NET migration  
+- **Incident response automation as a team strategy:** Learning about the AWS DevOps Agent's ability to reduce troubleshooting from hours to minutes is directly applicable to our project's future monitoring setup; this will inform how we configure CloudWatch alarms and runbooks.
 
-### Key Takeaways
+- **Secure internal AI tooling model:** The Amazon Q HR demo showed how AI assistants can be deployed within enterprise guardrails — a pattern we can reference if the team considers integrating AI into internal workflows without exposing sensitive project data.
 
-#### Design Mindset
-
-- **Business-first approach**: Always start from the business domain, not the technology  
-- **Ubiquitous language**: Importance of a shared vocabulary between business and tech teams  
-- **Bounded contexts**: Identifying and managing complexity in large systems  
-
-#### Technical Architecture
-
-- **Event storming technique**: Practical method for modeling business processes  
-- Use **event-driven communication** instead of synchronous calls  
-- **Integration patterns**: When to use sync, async, pub/sub, streaming  
-- **Compute spectrum**: Criteria for choosing between VM, containers, and serverless  
-
-#### Modernization Strategy
-
-- **Phased approach**: No rushing — follow a clear roadmap  
-- **7Rs framework**: Multiple modernization paths depending on the application  
-- **ROI measurement**: Cost reduction + business agility  
-
-### Applying to Work
-
-- **Apply DDD** to current projects: Event storming sessions with business teams  
-- **Refactor microservices**: Use bounded contexts to define service boundaries  
-- **Implement event-driven patterns**: Replace some sync calls with async messaging  
-- **Adopt serverless**: Pilot AWS Lambda for suitable use cases  
-- **Try Amazon Q Developer**: Integrate into the dev workflow to boost productivity  
-
-### Event Experience
-
-Attending the **“GenAI-powered App-DB Modernization”** workshop was extremely valuable, giving me a comprehensive view of modernizing applications and databases using advanced methods and tools. Key experiences included:
-
-#### Learning from highly skilled speakers
-- Experts from AWS and major tech organizations shared **best practices** in modern application design.  
-- Through real-world case studies, I gained a deeper understanding of applying **DDD** and **Event-Driven Architecture** to large projects.  
-
-#### Hands-on technical exposure
-- Participating in **event storming** sessions helped me visualize how to **model business processes** into domain events.  
-- Learned how to **split microservices** and define **bounded contexts** to manage large-system complexity.  
-- Understood trade-offs between **synchronous and asynchronous communication** and integration patterns like **pub/sub, point-to-point, streaming**.  
-
-#### Leveraging modern tools
-- Explored **Amazon Q Developer**, an AI tool for SDLC support from planning to maintenance.  
-- Learned to **automate code transformation** and pilot serverless with **AWS Lambda** to improve productivity.  
-
-#### Networking and discussions
-- The workshop offered opportunities to exchange ideas with experts, peers, and business teams, enhancing the **ubiquitous language** between business and tech.  
-- Real-world examples reinforced the importance of the **business-first approach** rather than focusing solely on technology.  
-
-#### Lessons learned
-- Applying DDD and event-driven patterns reduces **coupling** while improving **scalability** and **resilience**.  
-- Modernization requires a **phased approach** with **ROI measurement**; rushing the process can be risky.  
-- AI tools like Amazon Q Developer can significantly **boost productivity** when integrated into the current workflow.  
-
-#### Some event photos
-*Add your event photos here*  
-
-> Overall, the event not only provided technical knowledge but also helped me reshape my thinking about application design, system modernization, and cross-team collaboration.
+- **Security posture for AI integrations:** Understanding the MCP server vulnerability and the private-subnet mitigation pattern deepens our team's awareness of API security, complementing the API Gateway + Lambda architecture we are already building.

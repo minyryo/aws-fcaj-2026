@@ -118,12 +118,69 @@ Completed the single-player practice mode on **06/24/2026** — a 2–3 hour 3D 
 
 #### API Documentation
 
-| #   | Endpoint                        | Method | Input                                                                                      | Output                                                                                                                     | Use Case                                                                                                                                                                                                                                     |
-| --- | ------------------------------- | ------ | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `/api/v1/payments`              | `POST` | `booking_id` (UUID), `amount` (decimal), `payment_method` (string)                         | `payment_id` (UUID), `checkout_url` (string), `status: "PENDING"`                                                          | Player initiates payment after confirming a court booking. Creates a PENDING payment record in RDS and returns a checkout URL to redirect the player.                                                                                        |
-| 2   | `/api/v1/payments/webhook`      | `POST` | `payment_id` (UUID), `transaction_id` (string), `status` (string), `gateway_data` (object) | `{ success: boolean }`                                                                                                     | Payment gateway notifies the system of the transaction result. This is the entry point of the serverless path: API Gateway receives the callback → invokes Lambda to update payment status in RDS → triggers SNS notification to the player. |
-| 3   | `/api/v1/payments/{payment_id}` | `GET`  | `payment_id` (path param), Bearer token (header)                                           | `payment_id`, `booking_id`, `amount`, `currency`, `status`, `payment_method`, `transaction_id`, `created_at`, `updated_at` | Player or admin checks the status of a specific payment.                                                                                                                                                                                     |
-| 4   | `/api/v1/payments`              | `GET`  | Bearer token (header), `page` (int), `limit` (int)                                         | `{ data: [...payments], total, page, limit }`                                                                              | Player views their full payment history with pagination.                                                                                                                                                                                     |
+<!--
+| # | Endpoint | Method | Input | Output | Use Case |
+|---|----------|--------|-------|--------|----------|
+| 1 | `/api/v1/payments` | `POST` | `booking_id` (UUID), `amount` (decimal), `payment_method` (string) | `payment_id` (UUID), `checkout_url` (string), `status: "PENDING"` | Player initiates payment after confirming a court booking. Creates a PENDING payment record in RDS and returns a checkout URL to redirect the player. |
+| 2 | `/api/v1/payments/webhook` | `POST` | `payment_id` (UUID), `transaction_id` (string), `status` (string), `gateway_data` (object) | `{ success: boolean }` | Payment gateway notifies the system of the transaction result. This is the entry point of the serverless path: API Gateway receives the callback → invokes Lambda to update payment status in RDS → triggers SNS notification to the player. |
+| 3 | `/api/v1/payments/{payment_id}` | `GET` | `payment_id` (path param), Bearer token (header) | `payment_id`, `booking_id`, `amount`, `currency`, `status`, `payment_method`, `transaction_id`, `created_at`, `updated_at` | Player or admin checks the status of a specific payment. |
+| 4 | `/api/v1/payments` | `GET` | Bearer token (header), `page` (int), `limit` (int) | `{ data: [...payments], total, page, limit }` | Player views their full payment history with pagination. |
+-->
+
+<table style="width:100%; table-layout:fixed; word-break:break-word;">
+  <colgroup>
+    <col style="width:3%">
+    <col style="width:15%">
+    <col style="width:5%">
+    <col style="width:20%">
+    <col style="width:15%">
+    <col style="width:42%">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Endpoint</th>
+      <th>Method</th>
+      <th>Input</th>
+      <th>Output</th>
+      <th>Use Case</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><code>/api/v1/payments</code></td>
+      <td><code>POST</code></td>
+      <td><code>booking_id</code> (UUID), <code>amount</code> (decimal), <code>payment_method</code> (string)</td>
+      <td><code>payment_id</code> (UUID), <code>checkout_url</code> (string), <code>status: "PENDING"</code></td>
+      <td>Player initiates payment after confirming a court booking. Creates a PENDING payment record in RDS and returns a checkout URL to redirect the player.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><code>/api/v1/payments/webhook</code></td>
+      <td><code>POST</code></td>
+      <td><code>payment_id</code> (UUID), <code>transaction_id</code> (string), <code>status</code> (string), <code>gateway_data</code> (object)</td>
+      <td><code>{ success: boolean }</code></td>
+      <td>Payment gateway notifies the system of the transaction result. This is the entry point of the serverless path: API Gateway receives the callback → invokes Lambda to update payment status in RDS → triggers SNS notification to the player.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><code>/api/v1/payments/{payment_id}</code></td>
+      <td><code>GET</code></td>
+      <td><code>payment_id</code> (path param), Bearer token (header)</td>
+      <td><code>payment_id</code>, <code>booking_id</code>, <code>amount</code>, <code>currency</code>, <code>status</code>, <code>payment_method</code>, <code>transaction_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+      <td>Player or admin checks the status of a specific payment.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><code>/api/v1/payments</code></td>
+      <td><code>GET</code></td>
+      <td>Bearer token (header), <code>page</code> (int), <code>limit</code> (int)</td>
+      <td><code>{ data: [...payments], total, page, limit }</code></td>
+      <td>Player views their full payment history with pagination.</td>
+    </tr>
+  </tbody>
+</table>
 
 #### Database Design
 

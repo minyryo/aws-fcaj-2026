@@ -1,125 +1,61 @@
 ---
-title: "Event 1"
-date: 2024-01-01
+title: "Sự kiện 1 — Data Driven, AI Risen"
+date: 2026-06-27
 weight: 1
 chapter: false
 pre: " <b> 4.1. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
+### Thông tin sự kiện
 
-# Bài thu hoạch “GenAI-powered App-DB Modernization workshop”
+| Thông tin | Chi tiết |
+|-----------|---------|
+| **Tên sự kiện** | Data Driven, AI Risen |
+| **Thời gian** | 09:00, ngày 27/06/2026 |
+| **Địa điểm** | Livestream |
+| **Vai trò** | Người tham dự |
 
-### Mục Đích Của Sự Kiện
+---
 
-- Chia sẻ best practices trong thiết kế ứng dụng hiện đại
-- Giới thiệu phương pháp DDD và event-driven architecture
-- Hướng dẫn lựa chọn compute services phù hợp
-- Giới thiệu công cụ AI hỗ trợ development lifecycle
+### Mô tả sự kiện
 
-### Danh Sách Diễn Giả
+FCAJ Community Day tháng 6/2026 gồm năm bài trình bày tập trung vào các ứng dụng thực tiễn của Trí tuệ Nhân tạo trong hạ tầng đám mây, phát triển phần mềm và quy trình doanh nghiệp.
 
-- **Jignesh Shah** - Director, Open Source Databases
-- **Erica Liu** - Sr. GTM Specialist, AppMod
-- **Fabrianne Effendi** - Assc. Specialist SA, Serverless Amazon Web Services
+#### 1. Phát triển sự nghiệp và AI trong vận hành đám mây
+*Diễn giả: Steve Tran (Cloud Thinker)*
 
-### Nội Dung Nổi Bật
+Steve chia sẻ hành trình từ vị trí IT helpdesk đến AWS Solution Architect, nhấn mạnh rằng AI vừa tăng tốc độ lập trình vừa đòi hỏi kỹ sư phải có chuyên môn sâu hơn để quản lý các hệ thống phức tạp. Ông giới thiệu nền tảng AI agentic của Cloud Thinker, tự động hóa việc xử lý sự cố, kiểm thử bảo mật, kiểm soát chất lượng và tối ưu chi phí đám mây (FinOps).
 
-#### Đưa ra các ảnh hưởng tiêu cực của kiến trúc ứng dụng cũ
+#### 2. Xây dựng Voice AI Agent cho thị trường Việt Nam
+*Diễn giả: Hieu Nghi (Renova Cloud), Kiet (Student Video Group), Trung (R AI)*
 
-- Thời gian release sản phẩm lâu → Mất doanh thu/bỏ lỡ cơ hội
-- Hoạt động kém hiệu quả → Mất năng suất, tốn kém chi phí
-- Không tuân thủ các quy định về bảo mật → Mất an ninh, uy tín
+Phiên trình bày demo trực tiếp một Voice AI Agent được xây trên AWS Bedrock và phân tích các thách thức khi triển khai voice agent trong môi trường doanh nghiệp Việt Nam. Trung đề xuất pipeline tùy chỉnh Speech-to-Text → LLM → Text-to-Speech để xử lý chính xác giọng địa phương, ngắt hội thoại tự nhiên và các tác vụ tool-calling doanh nghiệp như tự động khóa thẻ ngân hàng.
 
-#### Chuyển đổi sang kiến trúc ứng dụng mới - Microservice Architecture
+#### 3. Tự động hóa khắc phục sự cố với AWS DevOps Agent
+*Diễn giả: Bao và Nguyen (Cloud Kinetics)*
 
-Chuyển đổi thành hệ thống modular – từng chức năng là một **dịch vụ độc lập** giao tiếp với nhau qua **sự kiện** với 3 trụ cột cốt lõi:
+Các diễn giả trình bày cách AWS DevOps Agent giải quyết vấn đề log phân tán và thời gian phản hồi sự cố chậm bằng cách tự động điều tra cảnh báo, xác định nguyên nhân gốc rễ và đề xuất kế hoạch khắc phục từng bước. Demo trực tiếp cho thấy agent chẩn đoán thành công một cuộc tấn công DDoS giả lập trên ứng dụng thương mại điện tử chạy trên ECS trong vài phút thay vì vài giờ.
 
-- **Queue Management**: Xử lý tác vụ bất đồng bộ
-- **Caching Strategy:** Tối ưu performance
-- **Message Handling:** Giao tiếp linh hoạt giữa services
+#### 4. Chuyển đổi quy trình Nhân sự với Amazon Q
+*Diễn giả: Truong và Minh Anh (Noventiq)*
 
-#### Domain-Driven Design (DDD)
+Minh Anh nêu các điểm đau của bộ phận HR như sàng lọc CV thủ công và rủi ro bảo mật khi tải dữ liệu ứng viên lên các công cụ AI công khai; Truong demo Amazon Q như một trợ lý AI bảo mật, có thể tùy chỉnh cho doanh nghiệp. Demo cho thấy Amazon Q tự động đọc nhiều CV, đối chiếu với mô tả vị trí Cloud Engineer và tạo báo cáo chấm điểm, đánh giá toàn diện.
 
-- **Phương pháp 4 bước**: Xác định domain events → sắp xếp timeline → identify actors → xác định bounded contexts
-- **Case study bookstore**: Minh họa cách áp dụng DDD thực tế
-- **Context mapping**: 7 patterns tích hợp bounded contexts
+#### 5. Bảo mật kết nối Amazon Q với Private MCP Server
+*Diễn giả: Toan Nguyen và Nghi*
 
-#### Event-Driven Architecture
+Phiên trình bày đề cập đến rủi ro bảo mật khi để lộ Model Context Protocol (MCP) server — cầu nối giữa các AI assistant như Amazon Q và các công cụ như Jira, Gmail, Zalo — ra internet công khai (DDoS, tấn công Man-in-the-Middle). Toan mô tả kiến trúc sử dụng AWS VPC connection, private subnet, interface endpoint và Route 53 resolver để đảm bảo toàn bộ lưu lượng AI và dữ liệu luôn nằm trong mạng AWS riêng tư.
 
-- **3 patterns tích hợp**: Publish/Subscribe, Point-to-point, Streaming
-- **Lợi ích**: Loose coupling, scalability, resilience
-- **So sánh sync vs async**: Hiểu rõ trade-offs (sự đánh đổi)
+---
 
-#### Compute Evolution
+### Kết quả và giá trị đạt được
 
-- **Shared Responsibility Model**: Từ EC2 → ECS → Fargate → Lambda
-- **Serverless benefits**: No server management, auto-scaling, pay-for-value
-- **Functions vs Containers**: Criteria lựa chọn phù hợp
+- **Góc nhìn rộng hơn về tác động của AI đến sự nghiệp cloud:** Bài chia sẻ về sự nghiệp giúp tôi nhìn lại việc nâng cao kỹ năng — AI tăng năng suất cơ bản nhưng đồng thời đòi hỏi chuyên môn sâu hơn về hệ thống, từ đó thúc đẩy tôi đầu tư nhiều hơn vào việc học AWS.
 
-#### Amazon Q Developer
+- **Hiểu sâu hơn về kiến trúc voice/thông báo:** Pipeline Voice AI tùy chỉnh cho tiếng Việt (STT → LLM → TTS) là kiến thức nền hữu ích nếu ứng dụng đặt sân của nhóm mở rộng thông báo ra ngoài SNS sang voice hoặc chat — giờ tôi đã hiểu độ phức tạp kỹ thuật đằng sau.
 
-- **SDLC automation**: Từ planning đến maintenance
-- **Code transformation**: Java upgrade, .NET modernization
-- **AWS Transform agents**: VMware, Mainframe, .NET migration
+- **Chiến lược tự động hóa phản hồi sự cố cho nhóm:** Khả năng của AWS DevOps Agent rút ngắn thời gian xử lý từ hàng giờ xuống vài phút rất phù hợp với chiến lược giám sát tương lai của dự án; điều này sẽ ảnh hưởng đến cách nhóm cấu hình CloudWatch alarm và runbook.
 
-### Những Gì Học Được
+- **Mô hình triển khai AI nội bộ an toàn:** Demo Amazon Q trong HR cho thấy cách triển khai AI assistant trong khuôn khổ bảo mật doanh nghiệp — một mô hình tham chiếu hữu ích nếu nhóm tích hợp AI vào quy trình nội bộ mà không để lộ dữ liệu dự án nhạy cảm.
 
-#### Tư Duy Thiết Kế
-
-- **Business-first approach**: Luôn bắt đầu từ business domain, không phải technology
-- **Ubiquitous language**: Importance của common vocabulary giữa business và tech teams
-- **Bounded contexts**: Cách identify và manage complexity trong large systems
-
-#### Kiến Trúc Kỹ Thuật
-
-- **Event storming technique**: Phương pháp thực tế để mô hình hóa quy trình kinh doanh
-- Sử dụng **Event-driven communication** thay vì synchronous calls
-- **Integration patterns**: Hiểu khi nào dùng sync, async, pub/sub, streaming
-- **Compute spectrum**: Criteria chọn từ VM → containers → serverless
-
-#### Chiến Lược Hiện Đại Hóa
-
-- **Phased approach**: Không rush, phải có roadmap rõ ràng
-- **7Rs framework**: Nhiều con đường khác nhau tùy thuộc vào đặc điểm của mỗi ứng dụng
-- **ROI measurement**: Cost reduction + business agility
-
-### Ứng Dụng Vào Công Việc
-
-- **Áp dụng DDD** cho project hiện tại: Event storming sessions với business team
-- **Refactor microservices**: Sử dụng bounded contexts để identify service boundaries
-- **Implement event-driven patterns**: Thay thế một số sync calls bằng async messaging
-- **Serverless adoption**: Pilot AWS Lambda cho một số use cases phù hợp
-- **Try Amazon Q Developer**: Integrate vào development workflow để boost productivity
-
-### Trải nghiệm trong event
-
-Tham gia workshop **“GenAI-powered App-DB Modernization”** là một trải nghiệm rất bổ ích, giúp tôi có cái nhìn toàn diện về cách hiện đại hóa ứng dụng và cơ sở dữ liệu bằng các phương pháp và công cụ hiện đại. Một số trải nghiệm nổi bật:
-
-#### Học hỏi từ các diễn giả có chuyên môn cao
-- Các diễn giả đến từ AWS và các tổ chức công nghệ lớn đã chia sẻ **best practices** trong thiết kế ứng dụng hiện đại.
-- Qua các case study thực tế, tôi hiểu rõ hơn cách áp dụng **Domain-Driven Design (DDD)** và **Event-Driven Architecture** vào các project lớn.
-
-#### Trải nghiệm kỹ thuật thực tế
-- Tham gia các phiên trình bày về **event storming** giúp tôi hình dung cách **mô hình hóa quy trình kinh doanh** thành các domain events.
-- Học cách **phân tách microservices** và xác định **bounded contexts** để quản lý sự phức tạp của hệ thống lớn.
-- Hiểu rõ trade-offs giữa **synchronous và asynchronous communication** cũng như các pattern tích hợp như **pub/sub, point-to-point, streaming**.
-
-#### Ứng dụng công cụ hiện đại
-- Trực tiếp tìm hiểu về **Amazon Q Developer**, công cụ AI hỗ trợ SDLC từ lập kế hoạch đến maintenance.
-- Học cách **tự động hóa code transformation** và pilot serverless với **AWS Lambda**, từ đó nâng cao năng suất phát triển.
-
-#### Kết nối và trao đổi
-- Workshop tạo cơ hội trao đổi trực tiếp với các chuyên gia, đồng nghiệp và team business, giúp **nâng cao ngôn ngữ chung (ubiquitous language)** giữa business và tech.
-- Qua các ví dụ thực tế, tôi nhận ra tầm quan trọng của **business-first approach**, luôn bắt đầu từ nhu cầu kinh doanh thay vì chỉ tập trung vào công nghệ.
-
-#### Bài học rút ra
-- Việc áp dụng DDD và event-driven patterns giúp giảm **coupling**, tăng **scalability** và **resilience** cho hệ thống.
-- Chiến lược hiện đại hóa cần **phased approach** và đo lường **ROI**, không nên vội vàng chuyển đổi toàn bộ hệ thống.
-- Các công cụ AI như Amazon Q Developer có thể **boost productivity** nếu được tích hợp vào workflow phát triển hiện tại.
-
-#### Một số hình ảnh khi tham gia sự kiện
-* Thêm các hình ảnh của các bạn tại đây
-> Tổng thể, sự kiện không chỉ cung cấp kiến thức kỹ thuật mà còn giúp tôi thay đổi cách tư duy về thiết kế ứng dụng, hiện đại hóa hệ thống và phối hợp hiệu quả hơn giữa các team.
+- **Nhận thức bảo mật cho tích hợp AI:** Hiểu lỗ hổng MCP server và giải pháp private subnet giúp nâng cao ý thức bảo mật API của nhóm, bổ sung cho kiến trúc API Gateway + Lambda mà nhóm đang xây dựng.

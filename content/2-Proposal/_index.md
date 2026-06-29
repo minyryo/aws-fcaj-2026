@@ -6,10 +6,6 @@ chapter: false
 pre: " <b> 2. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your report, including this warning.
-{{% /notice %}}
-
 In this section, you need to summarize the contents of the workshop that you **plan** to conduct.
 
 # Court Booking Application
@@ -42,11 +38,11 @@ A hybrid architecture combines the reliability of EC2-hosted application logic w
 
 The application is scoped to three main features, each assigned to a deployment model based on its workload characteristics:
 
-| Feature | Deployment Model | Rationale |
-| ------- | ---------------- | --------- |
-| User Authentication (Sign Up / Sign In) | Monolith (EC2) | Frequent, latency-sensitive; benefits from persistent compute |
-| Booking Management (Create / Edit / Cancel / View / Search) | Monolith (EC2) | Core business logic requiring relational integrity and complex queries |
-| Payment Processing | Serverless (Lambda + API Gateway) | Bursty, event-driven, and isolated — ideal for pay-per-invocation |
+| Feature                                                     | Deployment Model                  | Rationale                                                              |
+| ----------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------- |
+| User Authentication (Sign Up / Sign In)                     | Monolith (EC2)                    | Frequent, latency-sensitive; benefits from persistent compute          |
+| Booking Management (Create / Edit / Cancel / View / Search) | Monolith (EC2)                    | Core business logic requiring relational integrity and complex queries |
+| Payment Processing                                          | Serverless (Lambda + API Gateway) | Bursty, event-driven, and isolated — ideal for pay-per-invocation      |
 
 ### 4. Solution Architecture
 

@@ -6,10 +6,6 @@ chapter: false
 pre: " <b> 2. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
-
 Tại phần này, bạn cần tóm tắt các nội dung trong workshop mà bạn **dự tính** sẽ làm.
 
 # Ứng dụng Đặt sân thể thao
@@ -42,11 +38,11 @@ Kiến trúc hybrid kết hợp độ tin cậy của logic ứng dụng chạy 
 
 Ứng dụng tập trung vào ba tính năng chính, mỗi tính năng được phân bổ mô hình triển khai phù hợp với đặc điểm tải của nó:
 
-| Tính năng | Mô hình triển khai | Lý do |
-| --------- | ------------------ | ----- |
-| Xác thực người dùng (Đăng ký / Đăng nhập) | Monolith (EC2) | Tần suất cao, nhạy cảm với độ trễ; hưởng lợi từ tính toán liên tục |
-| Quản lý đặt sân (Tạo / Sửa / Hủy / Xem / Tìm kiếm) | Monolith (EC2) | Logic nghiệp vụ cốt lõi yêu cầu tính toàn vẹn quan hệ và truy vấn phức tạp |
-| Xử lý thanh toán | Serverless (Lambda + API Gateway) | Bùng phát, hướng sự kiện, độc lập — lý tưởng cho mô hình tính phí theo lần gọi |
+| Tính năng                                          | Mô hình triển khai                | Lý do                                                                          |
+| -------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------ |
+| Xác thực người dùng (Đăng ký / Đăng nhập)          | Monolith (EC2)                    | Tần suất cao, nhạy cảm với độ trễ; hưởng lợi từ tính toán liên tục             |
+| Quản lý đặt sân (Tạo / Sửa / Hủy / Xem / Tìm kiếm) | Monolith (EC2)                    | Logic nghiệp vụ cốt lõi yêu cầu tính toàn vẹn quan hệ và truy vấn phức tạp     |
+| Xử lý thanh toán                                   | Serverless (Lambda + API Gateway) | Bùng phát, hướng sự kiện, độc lập — lý tưởng cho mô hình tính phí theo lần gọi |
 
 ### 4. Kiến trúc giải pháp
 
