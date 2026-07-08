@@ -1,0 +1,6 @@
+/* Site-level override: neutralize the theme's legacy Mermaid 7-era stylesheet.
+   Modern Mermaid (v11, loaded from static/mermaid/mermaid.js) injects its own
+   styles into each rendered SVG, so no external CSS is needed. */
+.mermaid {
+  text-align: center;
+}

@@ -14,9 +14,9 @@ Typically, and as a standard, a worklog is carried out over about 3 months (thro
 
 **Week 2:** [AWS Skill Builder, Payment API & DB Design](1.2-week2/)
 
-**Week 3:** [Doing task B...](1.3-week3/)
+**Week 3:** [Cloud Quest: Cloud Practitioner Badge & Team Tech Stack Vote](1.3-week3/)
 
-**Week 4:** [Doing task C...](1.4-week4/)
+**Week 4:** [Cloud Quest Serverless & Monitoring Solutions, Unified API & DB Design](1.4-week4/)
 
 **Week 5:** [Doing task D...](1.5-week5/)
 
