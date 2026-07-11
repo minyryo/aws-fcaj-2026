@@ -368,3 +368,37 @@ Costs can be reduced significantly by using EC2 Reserved Instances or Savings Pl
 - **Technical**: A fully functional court booking system with real-time availability, secure payment, and instant notification - deployed on a production-grade hybrid AWS architecture.
 - **Educational**: Demonstrated hands-on experience with EC2, RDS, Cognito, Lambda, API Gateway, SNS, S3, and CloudWatch within a single cohesive project.
 - **Operational**: Auto Scaling ensures the system handles traffic spikes without manual intervention; CloudWatch provides ongoing visibility into system health.
+
+---
+
+### 11. Glossary
+
+| Abbreviation | Meaning |
+| --- | --- |
+| API | Application Programming Interface — the contract through which software components communicate |
+| AWS | Amazon Web Services — Amazon's cloud computing platform |
+| AZ | Availability Zone — an isolated data-center cluster within an AWS Region |
+| CDN | Content Delivery Network — geographically distributed cache serving static content close to users |
+| CI/CD | Continuous Integration / Continuous Delivery — automated building, testing, and deployment |
+| DB | Database |
+| EC2 | Amazon Elastic Compute Cloud — virtual servers on AWS |
+| ELB | Elastic Load Balancer — distributes incoming traffic across instances |
+| FK | Foreign Key — a column referencing another table's primary key |
+| HTTP | HyperText Transfer Protocol |
+| JSONB | JSON Binary — PostgreSQL's binary JSON column type |
+| JWT | JSON Web Token — signed token carrying identity claims |
+| MAU | Monthly Active Users |
+| OAuth | Open Authorization — standard for delegated third-party login |
+| PK | Primary Key — the column uniquely identifying each row |
+| RBAC | Role-Based Access Control |
+| RDS | Amazon Relational Database Service — managed SQL databases |
+| REST | Representational State Transfer — architectural style for HTTP APIs |
+| S3 | Amazon Simple Storage Service — object storage |
+| SES | Amazon Simple Email Service — transactional email sending |
+| SNS | Amazon Simple Notification Service — pub/sub messaging and notifications |
+| SQL | Structured Query Language |
+| UI | User Interface |
+| UK | Unique Key — column(s) whose values must be unique |
+| URL | Uniform Resource Locator — web address |
+| UUID | Universally Unique Identifier |
+| VPC | Amazon Virtual Private Cloud — an isolated virtual network on AWS |

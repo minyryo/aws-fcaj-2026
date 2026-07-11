@@ -170,3 +170,32 @@ Tất cả thành viên đã biểu quyết cho tech stack chính:
 | Backend — Thống nhất API & DB       | Hiếu            | Thống nhất tài liệu API & thiết kế cơ sở dữ liệu                         |
 | Backend — Repo & Triển khai         | Hiếu            | Khởi tạo code repo và hướng dẫn triển khai cho nhóm                      |
 | Backend — Rà soát API & Nghiên cứu  | Thành & Nguyên  | Rà soát tài liệu API hiện có & nghiên cứu viết API bằng FastAPI (Python) |
+
+---
+
+### Bảng thuật ngữ viết tắt
+
+| Viết tắt | Ý nghĩa |
+| --- | --- |
+| AI | Trí tuệ nhân tạo |
+| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| AWS | Nền tảng điện toán đám mây của Amazon |
+| AZ | Vùng sẵn sàng — cụm trung tâm dữ liệu tách biệt trong một Region của AWS |
+| BaaS | Backend dưới dạng dịch vụ |
+| BE | Backend — phần phía máy chủ của ứng dụng |
+| CaaS | Container dưới dạng dịch vụ |
+| DB | Cơ sở dữ liệu |
+| EC2 | Amazon Elastic Compute Cloud — máy chủ ảo trên AWS |
+| EFS | Hệ thống tệp chia sẻ, co giãn của AWS |
+| ELB | Bộ cân bằng tải — phân phối lưu lượng vào giữa các instance |
+| FaaS | Hàm dưới dạng dịch vụ |
+| IaaS | Hạ tầng dưới dạng dịch vụ |
+| IAM | Quản lý danh tính và quyền truy cập của AWS — user, role và quyền hạn |
+| PaaS | Nền tảng dưới dạng dịch vụ |
+| PR | Pull Request — thay đổi mã được review trước khi merge |
+| RDS | Dịch vụ cơ sở dữ liệu quan hệ được quản lý của AWS |
+| REST | Phong cách kiến trúc API dựa trên HTTP |
+| S3 | Dịch vụ lưu trữ đối tượng của AWS |
+| SaaS | Phần mềm dưới dạng dịch vụ |
+| UI | Giao diện người dùng |
+| VPC | Mạng ảo riêng biệt trên AWS |

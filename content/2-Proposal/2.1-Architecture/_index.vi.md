@@ -368,3 +368,37 @@ Chi phí có thể giảm đáng kể bằng cách sử dụng EC2 Reserved Inst
 - **Kỹ thuật**: Hệ thống đặt sân hoàn chỉnh với thông tin thời gian thực, thanh toán bảo mật và thông báo tức thì - triển khai trên kiến trúc AWS hybrid cấp độ production.
 - **Học thuật**: Thể hiện kinh nghiệm thực hành với EC2, RDS, Cognito, Lambda, API Gateway, SNS, S3 và CloudWatch trong một dự án duy nhất.
 - **Vận hành**: Auto Scaling đảm bảo hệ thống xử lý tốt các đợt tăng lưu lượng mà không cần can thiệp thủ công; CloudWatch cung cấp khả năng quan sát liên tục cho sức khỏe hệ thống.
+
+---
+
+### 11. Bảng thuật ngữ viết tắt
+
+| Viết tắt | Ý nghĩa |
+| --- | --- |
+| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| AWS | Nền tảng điện toán đám mây của Amazon |
+| AZ | Vùng sẵn sàng — cụm trung tâm dữ liệu tách biệt trong một Region của AWS |
+| CDN | Mạng phân phối nội dung — cache phân tán địa lý, phục vụ nội dung tĩnh gần người dùng |
+| CI/CD | Tích hợp liên tục / Chuyển giao liên tục — tự động build, test và triển khai |
+| DB | Cơ sở dữ liệu |
+| EC2 | Amazon Elastic Compute Cloud — máy chủ ảo trên AWS |
+| ELB | Bộ cân bằng tải — phân phối lưu lượng vào giữa các instance |
+| FK | Khóa ngoại — cột tham chiếu khóa chính của bảng khác |
+| HTTP | Giao thức truyền siêu văn bản |
+| JSONB | JSON nhị phân — kiểu cột JSON của PostgreSQL |
+| JWT | Token ký số mang thông tin danh tính (claims) |
+| MAU | Người dùng hoạt động hàng tháng |
+| OAuth | Chuẩn ủy quyền đăng nhập qua bên thứ ba |
+| PK | Khóa chính — cột định danh duy nhất mỗi hàng |
+| RBAC | Phân quyền dựa trên vai trò |
+| RDS | Dịch vụ cơ sở dữ liệu quan hệ được quản lý của AWS |
+| REST | Phong cách kiến trúc API dựa trên HTTP |
+| S3 | Dịch vụ lưu trữ đối tượng của AWS |
+| SES | Dịch vụ gửi email của AWS |
+| SNS | Dịch vụ thông báo pub/sub của AWS |
+| SQL | Ngôn ngữ truy vấn có cấu trúc |
+| UI | Giao diện người dùng |
+| UK | Khóa duy nhất — cột có giá trị không được trùng lặp |
+| URL | Địa chỉ tài nguyên trên web |
+| UUID | Mã định danh duy nhất toàn cục |
+| VPC | Mạng ảo riêng biệt trên AWS |

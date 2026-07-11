@@ -376,3 +376,34 @@ payments.status:   PENDING ──► SUCCESS
 ```
 
 **Key design rule:** Steps 1–3 are handled by the EC2 monolith (writes to `bookings` and `payments`). Steps 5–8 are handled entirely by the serverless path (Lambda reads and writes the same RDS tables). The two paths never write to the same record at the same time — the monolith creates the records, Lambda updates them — so there is no write conflict.
+
+---
+
+### Glossary
+
+| Abbreviation | Meaning |
+| --- | --- |
+| AI | Artificial Intelligence |
+| API | Application Programming Interface — the contract through which software components communicate |
+| AWS | Amazon Web Services — Amazon's cloud computing platform |
+| BE | Backend — the server-side part of the application |
+| CLF-C02 | Exam code of the AWS Certified Cloud Practitioner certification |
+| DB | Database |
+| DVA-C02 | Exam code of the AWS Certified Developer – Associate certification |
+| EC2 | Amazon Elastic Compute Cloud — virtual servers on AWS |
+| ERD | Entity-Relationship Diagram — visual model of database tables and their relationships |
+| FK | Foreign Key — a column referencing another table's primary key |
+| IAM | AWS Identity and Access Management — users, roles, and permissions |
+| JSONB | JSON Binary — PostgreSQL's binary JSON column type |
+| JWT | JSON Web Token — signed token carrying identity claims |
+| PK | Primary Key — the column uniquely identifying each row |
+| RDS | Amazon Relational Database Service — managed SQL databases |
+| S3 | Amazon Simple Storage Service — object storage |
+| SNS | Amazon Simple Notification Service — pub/sub messaging and notifications |
+| SQS | Amazon Simple Queue Service — managed message queues |
+| UI | User Interface |
+| UK | Unique Key — column(s) whose values must be unique |
+| URL | Uniform Resource Locator — web address |
+| UUID | Universally Unique Identifier |
+| VND | Vietnamese Dong (ISO currency code) |
+| VPC | Amazon Virtual Private Cloud — an isolated virtual network on AWS |

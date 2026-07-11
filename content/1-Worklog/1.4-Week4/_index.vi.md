@@ -120,3 +120,22 @@ Trạng thái tổng hợp sau Tuần 3 và Tuần 4 của hành trình **AWS Cl
 | AWS Budgets                              | 2    |
 | AWS                                      | 1    |
 | Cloud Economics                          | 1    |
+
+---
+
+### Bảng thuật ngữ viết tắt
+
+| Viết tắt | Ý nghĩa |
+| --- | --- |
+| AI | Trí tuệ nhân tạo |
+| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| AWS | Nền tảng điện toán đám mây của Amazon |
+| EC2 | Amazon Elastic Compute Cloud — máy chủ ảo trên AWS |
+| EFS | Hệ thống tệp chia sẻ, co giãn của AWS |
+| ELB | Bộ cân bằng tải — phân phối lưu lượng vào giữa các instance |
+| IAM | Quản lý danh tính và quyền truy cập của AWS — user, role và quyền hạn |
+| IDE | Môi trường phát triển tích hợp |
+| RDS | Dịch vụ cơ sở dữ liệu quan hệ được quản lý của AWS |
+| REST | Phong cách kiến trúc API dựa trên HTTP |
+| S3 | Dịch vụ lưu trữ đối tượng của AWS |
+| VPC | Mạng ảo riêng biệt trên AWS |

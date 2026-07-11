@@ -57,7 +57,7 @@ Summary:
 
 **GitHub Actions → S3 + CloudFront for the frontend instead of Amplify.** More control (cache policies, invalidations), but everything Amplify gives for free would have to be hand-rolled — most importantly per-PR preview URLs, which is the FE team's entire review loop.
 
-#### Honest caveats — know these before starting
+#### Prerequisites and constraints
 
 1. **CodeDeploy's agent setup on EC2 has a learning curve** (install the agent in launch-template user-data, `appspec.yml` hooks). Budget half a day for it. The fallback if it fights you: GitHub Actions → SSM `RunCommand` with a deploy script — simpler, but it loses ASG-awareness and native rollback, so treat it as plan B only.
 2. **Lambda-in-VPC needs a route to the internet.** The process-payment function sits in private subnets to reach RDS — but if it must _call out_ to the payment gateway's API (verify signatures, query transaction status), private subnets have no internet route. Options: a NAT gateway (~$32/month — nearly doubles the project budget), a NAT instance on a t3.micro (free-tier-friendly, more ops work), or designing the webhook flow so the Lambda never initiates outbound calls (authenticate the incoming payload via HMAC signature instead). Decide this **before** wiring the subnets/SGs in the SAM template.
@@ -736,3 +736,43 @@ jobs:
 | SSM Parameter Store (standard) | $0                                                              |
 
 Net: effectively **zero** on top of the existing ~$45/month runtime estimate from the [Architecture Design](../2.1-architecture/).
+
+---
+
+### 11. Glossary
+
+| Abbreviation | Meaning                                                                                        |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| API          | Application Programming Interface — the contract through which software components communicate |
+| ASG          | Auto Scaling Group — a group of EC2 instances that automatically scales in/out with load       |
+| AWS          | Amazon Web Services — Amazon's cloud computing platform                                        |
+| BE           | Backend — the server-side part of the application                                              |
+| CDK          | AWS Cloud Development Kit — define AWS infrastructure in general-purpose programming languages |
+| CI/CD        | Continuous Integration / Continuous Delivery — automated building, testing, and deployment     |
+| DB           | Database                                                                                       |
+| EC2          | Amazon Elastic Compute Cloud — virtual servers on AWS                                          |
+| ECR          | Amazon Elastic Container Registry — managed Docker image registry                              |
+| ECS          | Amazon Elastic Container Service — container orchestration service                             |
+| ELB          | Elastic Load Balancer — distributes incoming traffic across instances                          |
+| FE           | Frontend — the client-side part of the application                                             |
+| GH           | GitHub                                                                                         |
+| GW           | Gateway (API GW = Amazon API Gateway)                                                          |
+| HMAC         | Hash-based Message Authentication Code — signature proving a message's integrity and origin    |
+| HTTP         | HyperText Transfer Protocol                                                                    |
+| IaC          | Infrastructure as Code — declaring infrastructure in versioned files                           |
+| IAM          | AWS Identity and Access Management — users, roles, and permissions                             |
+| NAT          | Network Address Translation — lets private subnets reach the internet                          |
+| OIDC         | OpenID Connect — identity layer on top of OAuth 2.0                                            |
+| PR           | Pull Request — a proposed code change reviewed before merging                                  |
+| RDS          | Amazon Relational Database Service — managed SQL databases                                     |
+| S3           | Amazon Simple Storage Service — object storage                                                 |
+| SAM          | AWS Serverless Application Model — IaC framework for Lambda applications                       |
+| SG           | Security Group — instance-level virtual firewall                                               |
+| SNS          | Amazon Simple Notification Service — pub/sub messaging and notifications                       |
+| SPA          | Single-Page Application — web app served as one HTML page with client-side routing             |
+| SSM          | AWS Systems Manager — fleet management: parameters, run-command, sessions                      |
+| TS           | TypeScript — statically typed JavaScript                                                       |
+| UI           | User Interface                                                                                 |
+| URL          | Uniform Resource Locator — web address                                                         |
+| VPC          | Amazon Virtual Private Cloud — an isolated virtual network on AWS                              |
+| YAML         | YAML Ain't Markup Language — human-readable configuration format                               |

@@ -74,3 +74,24 @@ Hieu presented the hybrid AWS architecture proposal for the court booking applic
 - FE team to complete market research and produce an initial design system by end of Week 2
 - BE members to complete API docs and DB schema drafts by end of Week 2
 - AWS Admin to have the base account structure ready before infrastructure work begins in Week 3
+
+---
+
+### Glossary
+
+| Abbreviation | Meaning |
+| --- | --- |
+| AI | Artificial Intelligence |
+| API | Application Programming Interface — the contract through which software components communicate |
+| AWS | Amazon Web Services — Amazon's cloud computing platform |
+| BE | Backend — the server-side part of the application |
+| DB | Database |
+| EC2 | Amazon Elastic Compute Cloud — virtual servers on AWS |
+| ELB | Elastic Load Balancer — distributes incoming traffic across instances |
+| FE | Frontend — the client-side part of the application |
+| IAM | AWS Identity and Access Management — users, roles, and permissions |
+| RDS | Amazon Relational Database Service — managed SQL databases |
+| S3 | Amazon Simple Storage Service — object storage |
+| SNS | Amazon Simple Notification Service — pub/sub messaging and notifications |
+| UI | User Interface |
+| UX | User Experience |

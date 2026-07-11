@@ -170,3 +170,31 @@ All members voted for the main tech stack:
 | Backend — API & DB Unification | Hieu           | Unify the APIs & database design                                       |
 | Backend — Repo & Deployment    | Hieu           | Init code repo and provide deployment guidance for the team            |
 | Backend — API Review & Research | Thanh & Nguyen | Review the existing API doc & research on coding APIs using FastAPI (Python) |
+
+---
+
+### Glossary
+
+| Abbreviation | Meaning |
+| --- | --- |
+| AI | Artificial Intelligence |
+| API | Application Programming Interface — the contract through which software components communicate |
+| AWS | Amazon Web Services — Amazon's cloud computing platform |
+| BaaS | Backend as a Service |
+| BE | Backend — the server-side part of the application |
+| CaaS | Containers as a Service |
+| DB | Database |
+| EC2 | Amazon Elastic Compute Cloud — virtual servers on AWS |
+| EFS | Amazon Elastic File System — shared, elastic file storage |
+| ELB | Elastic Load Balancer — distributes incoming traffic across instances |
+| FaaS | Function as a Service |
+| IaaS | Infrastructure as a Service |
+| IAM | AWS Identity and Access Management — users, roles, and permissions |
+| PaaS | Platform as a Service |
+| PR | Pull Request — a proposed code change reviewed before merging |
+| RDS | Amazon Relational Database Service — managed SQL databases |
+| REST | Representational State Transfer — architectural style for HTTP APIs |
+| S3 | Amazon Simple Storage Service — object storage |
+| SaaS | Software as a Service |
+| UI | User Interface |
+| VPC | Amazon Virtual Private Cloud — an isolated virtual network on AWS |

@@ -376,3 +376,35 @@ payments.status:   PENDING ──► SUCCESS
 ```
 
 **Nguyên tắc thiết kế then chốt:** Bước 1–3 do EC2 monolith xử lý (ghi vào `bookings` và `payments`). Bước 5–8 do luồng serverless xử lý hoàn toàn (Lambda đọc và ghi vào cùng các bảng RDS). Hai luồng không bao giờ ghi vào cùng một bản ghi cùng lúc — monolith tạo bản ghi, Lambda cập nhật chúng — do đó không xảy ra xung đột ghi.
+
+---
+
+### Bảng thuật ngữ viết tắt
+
+| Viết tắt | Ý nghĩa |
+| --- | --- |
+| AI | Trí tuệ nhân tạo |
+| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| AWS | Nền tảng điện toán đám mây của Amazon |
+| AZ | Vùng sẵn sàng — cụm trung tâm dữ liệu tách biệt trong một Region của AWS |
+| BE | Backend — phần phía máy chủ của ứng dụng |
+| CLF-C02 | Mã kỳ thi chứng chỉ AWS Certified Cloud Practitioner |
+| DB | Cơ sở dữ liệu |
+| DVA-C02 | Mã kỳ thi chứng chỉ AWS Certified Developer – Associate |
+| EC2 | Amazon Elastic Compute Cloud — máy chủ ảo trên AWS |
+| ERD | Sơ đồ thực thể – quan hệ, mô hình hóa các bảng và quan hệ trong CSDL |
+| FK | Khóa ngoại — cột tham chiếu khóa chính của bảng khác |
+| IAM | Quản lý danh tính và quyền truy cập của AWS — user, role và quyền hạn |
+| JSONB | JSON nhị phân — kiểu cột JSON của PostgreSQL |
+| JWT | Token ký số mang thông tin danh tính (claims) |
+| PK | Khóa chính — cột định danh duy nhất mỗi hàng |
+| RDS | Dịch vụ cơ sở dữ liệu quan hệ được quản lý của AWS |
+| S3 | Dịch vụ lưu trữ đối tượng của AWS |
+| SNS | Dịch vụ thông báo pub/sub của AWS |
+| SQS | Dịch vụ hàng đợi tin nhắn của AWS |
+| UI | Giao diện người dùng |
+| UK | Khóa duy nhất — cột có giá trị không được trùng lặp |
+| URL | Địa chỉ tài nguyên trên web |
+| UUID | Mã định danh duy nhất toàn cục |
+| VND | Đồng Việt Nam (mã tiền tệ ISO) |
+| VPC | Mạng ảo riêng biệt trên AWS |

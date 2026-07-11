@@ -120,3 +120,22 @@ Combined standing after Weeks 3 and 4 of the **AWS Cloud Quest: Cloud Practition
 | AWS Budgets                            | 2      |
 | AWS                                    | 1      |
 | Cloud Economics                        | 1      |
+
+---
+
+### Glossary
+
+| Abbreviation | Meaning |
+| --- | --- |
+| AI | Artificial Intelligence |
+| API | Application Programming Interface — the contract through which software components communicate |
+| AWS | Amazon Web Services — Amazon's cloud computing platform |
+| EC2 | Amazon Elastic Compute Cloud — virtual servers on AWS |
+| EFS | Amazon Elastic File System — shared, elastic file storage |
+| ELB | Elastic Load Balancer — distributes incoming traffic across instances |
+| IAM | AWS Identity and Access Management — users, roles, and permissions |
+| IDE | Integrated Development Environment |
+| RDS | Amazon Relational Database Service — managed SQL databases |
+| REST | Representational State Transfer — architectural style for HTTP APIs |
+| S3 | Amazon Simple Storage Service — object storage |
+| VPC | Amazon Virtual Private Cloud — an isolated virtual network on AWS |

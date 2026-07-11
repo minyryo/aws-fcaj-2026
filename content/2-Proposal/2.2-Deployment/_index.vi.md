@@ -736,3 +736,43 @@ jobs:
 | SSM Parameter Store (standard) | $0                                                                        |
 
 Tổng: gần như **bằng không** so với ước tính vận hành ~$45/tháng trong [Thiết kế kiến trúc](../2.1-architecture/).
+
+---
+
+### 11. Bảng thuật ngữ viết tắt
+
+| Viết tắt | Ý nghĩa |
+| --- | --- |
+| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| ASG | Nhóm EC2 instance tự động tăng/giảm số lượng theo tải |
+| AWS | Nền tảng điện toán đám mây của Amazon |
+| BE | Backend — phần phía máy chủ của ứng dụng |
+| CDK | Bộ công cụ định nghĩa hạ tầng AWS bằng ngôn ngữ lập trình |
+| CI/CD | Tích hợp liên tục / Chuyển giao liên tục — tự động build, test và triển khai |
+| DB | Cơ sở dữ liệu |
+| EC2 | Amazon Elastic Compute Cloud — máy chủ ảo trên AWS |
+| ECR | Kho lưu trữ image container được quản lý |
+| ECS | Dịch vụ điều phối container của AWS |
+| ELB | Bộ cân bằng tải — phân phối lưu lượng vào giữa các instance |
+| FE | Frontend — phần giao diện phía người dùng của ứng dụng |
+| GH | GitHub |
+| GW | Gateway (API GW = Amazon API Gateway) |
+| HMAC | Mã xác thực thông điệp dựa trên hàm băm — chứng minh tính toàn vẹn và nguồn gốc |
+| HTTP | Giao thức truyền siêu văn bản |
+| IaC | Hạ tầng dưới dạng mã — khai báo hạ tầng trong tệp có quản lý phiên bản |
+| IAM | Quản lý danh tính và quyền truy cập của AWS — user, role và quyền hạn |
+| NAT | Dịch địa chỉ mạng — cho phép subnet private đi ra internet |
+| OIDC | Lớp danh tính xây trên OAuth 2.0 |
+| PR | Pull Request — thay đổi mã được review trước khi merge |
+| RDS | Dịch vụ cơ sở dữ liệu quan hệ được quản lý của AWS |
+| S3 | Dịch vụ lưu trữ đối tượng của AWS |
+| SAM | Framework hạ tầng-dưới-dạng-mã cho ứng dụng serverless của AWS |
+| SG | Tường lửa ảo cấp instance |
+| SNS | Dịch vụ thông báo pub/sub của AWS |
+| SPA | Ứng dụng web một trang, định tuyến phía client |
+| SSM | AWS Systems Manager — quản lý vận hành: tham số, chạy lệnh từ xa, phiên làm việc |
+| TS | TypeScript — JavaScript có kiểu tĩnh |
+| UI | Giao diện người dùng |
+| URL | Địa chỉ tài nguyên trên web |
+| VPC | Mạng ảo riêng biệt trên AWS |
+| YAML | Định dạng cấu hình dễ đọc cho con người |
