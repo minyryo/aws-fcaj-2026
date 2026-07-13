@@ -16,21 +16,21 @@ Thông tin chung:
 
 ### 1. Tổng quan thiết kế CI/CD
 
-**Nguyên tắc thiết kế:** GitHub Actions là bộ điều phối duy nhất; các dịch vụ AWS-native là đích triển khai. Một monorepo, ba đường triển khai tương ứng ba vùng kiến trúc:
+**Nguyên tắc thiết kế:** GitHub Actions là bộ điều phối duy nhất; các dịch vụ AWS-native là đích triển khai. Hai repository tách theo nhóm phụ trách — `court-booking-frontend` (Danh & Hùng) và `court-booking-backend` (FastAPI + Lambda, nhóm BE) — với ba đường triển khai tương ứng ba vùng kiến trúc:
 
 ```
-                        ┌─────────────── GitHub monorepo ───────────────┐
-                        │  /frontend   /backend    /lambdas   /infra    │
-                        └──────┬────────────┬──────────┬────────────────┘
-        Mở PR:            lint + test   lint + test  lint + test   (lọc theo path)
-                               │            │             │
-        Merge vào main:        ▼            ▼             ▼
-                        ┌────────────┐ ┌─────────────┐ ┌──────────────┐
-                        │  Amplify   │ │ GH Actions  │ │ GH Actions   │
-                        │  CI/CD     │ │ → CodeDeploy│ │ → SAM deploy │
-                        │  tích hợp  │ │ → EC2 ASG   │ │ → Lambda ×2  │
-                        └────────────┘ └─────────────┘ │ + API GW     │
-                                                       └──────────────┘
+              ┌─ court-booking-frontend ─┐   ┌────── court-booking-backend ──────┐
+              │    React + Vite (TS)     │   │   /backend           /lambdas     │
+              └────────────┬─────────────┘   └───────┬──────────────────┬────────┘
+Mở PR:          lint + test + contract        lint + test          lint + test
+                       check                     (lọc theo path trong repo)
+Merge vào main:            ▼                          ▼                  ▼
+              ┌────────────────┐             ┌─────────────┐    ┌──────────────┐
+              │    Amplify     │             │ GH Actions  │    │ GH Actions   │
+              │ CI/CD tích hợp │             │ → CodeDeploy│    │ → SAM deploy │
+              └────────────────┘             │ → EC2 ASG   │    │ → Lambda ×2  │
+                                             └─────────────┘    │ + API GW     │
+                                                                └──────────────┘
 ```
 
 | Thành phần                         | Pipeline                                                          | Lý do                                                                                                                                                               |
@@ -43,13 +43,15 @@ Thông tin chung:
 **Các quyết định xuyên suốt:**
 
 1. **GitHub OIDC → IAM role** — không lưu AWS key dài hạn trong GitHub secrets; mỗi pipeline một role tối thiểu quyền.
-2. **Monorepo với path filter** — PR frontend không bao giờ kích hoạt deploy backend; một luồng review cho nhóm 5 người.
+2. **Hai repo tách theo nhóm phụ trách** — FE và BE release theo tiến độ riêng; nếu API contract giữa hai bên bị lệch (drift), job kiểm tra dựa trên OpenAPI trong repo frontend sẽ phát hiện ngay khi mở PR (§4.3). Bên trong repo backend, path filter giữ pipeline backend và lambda độc lập với nhau.
 3. **Hai môi trường, có cổng phê duyệt** — merge tự động deploy lên dev; prod chờ phê duyệt qua GitHub Environment.
 4. **Quality gate trên mỗi PR** — `ruff` + `pytest` (+ Postgres service container), `tsc` + `eslint` + `vitest`.
 
 #### Các phương án đã cân nhắc — và lý do không chọn
 
-**AWS CodePipeline + CodeBuild toàn phần** sẽ là câu trả lời "thuần AWS", nhưng: CodeBuild tính phí theo phút build trong khi GitHub Actions miễn phí cho repo public/giáo dục, trải nghiệm phát triển kém mượt hơn (dò log trong console thay vì check hiển thị ngay trong PR), và nhóm vốn đã làm việc trên GitHub. Ta vẫn khai thác sâu các dịch vụ AWS qua CodeDeploy + SAM + Amplify + OIDC/IAM — có thể nói là kết hợp tốt nhất của cả hai thế giới, và mỗi dịch vụ đó đều là kỹ năng AWS giá trị trong hồ sơ.
+**AWS CodePipeline + CodeBuild toàn phần** sẽ là câu trả lời "thuần AWS", nhưng: CodeBuild tính phí theo phút build trong khi GitHub Actions miễn phí cho repo public/giáo dục, trải nghiệm phát triển kém mượt hơn (dò log trong console thay vì check hiển thị ngay trong PR), và nhóm vốn đã làm việc trên GitHub. Nhóm vẫn được thực hành chuyên sâu các dịch vụ AWS qua CodeDeploy + SAM + Amplify + OIDC/IAM — tận dụng được ưu điểm của cả hai phía, và mỗi dịch vụ đó đều là kỹ năng AWS đáng giá trong CV.
+
+**Một monorepo thay vì hai repo.** Một repo cho phép gói thay đổi của cả FE lẫn BE trong cùng một PR và chỉ có một luồng review — nghe rất hợp lý trên lý thuyết. Nhưng hai bạn FE và ba bạn BE gần như không đụng vào code của nhau, toolchain tách biệt hoàn toàn (npm và Python), và Amplify kết nối đơn giản hơn với một repo frontend riêng. Lợi thế duy nhất của monorepo thực sự quan trọng — giữ API contract đồng bộ giữa hai phía — đã được bù đắp bằng job sinh kiểu dữ liệu tự động từ OpenAPI (§4.3), nên tách repo theo nhóm phụ trách là lựa chọn hợp lý hơn.
 
 **Container trên ECS/Fargate thay vì EC2 + CodeDeploy.** Container hóa FastAPI sẽ hiện đại hóa việc triển khai (image bất biến, đồng nhất local/prod), nhưng nó thay thế chính EC2 monolith đã cam kết trong [Thiết kế kiến trúc](../2.1-architecture/) — tức là đổi kiến trúc compute, không chỉ đổi pipeline. Nó cũng thêm Docker, ECR và ECS thành ba thứ mới phải học trong khung 8 tuần, mà không mang lại lợi ích chức năng nào ở quy mô này. Đáng cân nhắc lại sau chương trình nếu ứng dụng tiếp tục phát triển.
 
@@ -57,36 +59,48 @@ Thông tin chung:
 
 **GitHub Actions → S3 + CloudFront cho frontend thay vì Amplify.** Kiểm soát nhiều hơn (chính sách cache, invalidation), nhưng mọi thứ Amplify cho miễn phí sẽ phải tự xây — quan trọng nhất là URL preview cho từng PR, vốn là toàn bộ vòng review của nhóm FE.
 
-#### Lưu ý thẳng thắn — cần biết trước khi bắt đầu
+#### Một số lưu ý thực tế — cần biết trước khi bắt đầu
 
-1. **Việc cài đặt CodeDeploy agent trên EC2 có độ dốc học tập** (cài agent trong user-data của launch template, các hook `appspec.yml`). Dự trù nửa ngày cho việc này. Phương án dự phòng nếu gặp trục trặc: GitHub Actions → SSM `RunCommand` với script deploy — đơn giản hơn, nhưng mất khả năng nhận biết ASG và rollback tự nhiên, nên chỉ coi là phương án B.
+1. **Việc cài đặt CodeDeploy agent trên EC2 cần thời gian làm quen** (cài agent trong user-data của launch template, các hook `appspec.yml`). Dự trù nửa ngày cho việc này. Phương án dự phòng nếu gặp trục trặc: GitHub Actions → SSM `RunCommand` với script deploy — đơn giản hơn, nhưng mất khả năng nhận biết ASG và cơ chế rollback tích hợp sẵn, nên chỉ coi là phương án B.
 2. **Lambda trong VPC cần đường ra internet.** Hàm xử lý thanh toán nằm trong subnet private để truy cập RDS — nhưng nếu nó phải _chủ động gọi ra_ API của cổng thanh toán (xác minh chữ ký, tra cứu trạng thái giao dịch), subnet private không có route internet. Các lựa chọn: NAT gateway (~$32/tháng — gần gấp đôi ngân sách dự án), NAT instance trên t3.micro (thân thiện free-tier, tốn công vận hành hơn), hoặc thiết kế luồng webhook sao cho Lambda không bao giờ khởi tạo cuộc gọi ra ngoài (xác thực payload đến bằng chữ ký HMAC). Hãy quyết định điều này **trước khi** cấu hình subnet/SG trong template SAM.
 3. **Deploy CloudFormation không tức thời.** `sam deploy` chạy changeset — dự kiến 1–3 phút kể cả cho thay đổi một dòng ở Lambda. Điều đó bình thường; đừng cố tối ưu.
 4. **Bước migration giả định có ít nhất một instance đang chạy khỏe mạnh.** Bước SSM nhắm vào instance đầu tiên đang chạy có tag phù hợp — ổn ở quy mô này, nhưng là giả định cần biết khi debug lần deploy đầu tiên vào một ASG trống.
 
 > Các placeholder dùng xuyên suốt — thay toàn cục trước khi chạy bất kỳ lệnh nào:
-> `<ACCOUNT_ID>` (mã tài khoản AWS 12 số), `<REGION>` (ví dụ `ap-southeast-1`), `<GH_ORG>/<GH_REPO>`.
+> `<ACCOUNT_ID>` (mã tài khoản AWS 12 số), `<REGION>` (ví dụ `ap-southeast-1`), `<GH_ORG>` (tổ chức hoặc tên người dùng GitHub). Hai repo được đặt tên `court-booking-frontend` và `court-booking-backend`.
 
 ---
 
 ### 2. Khởi tạo Repository
 
-#### 2.1 Tạo monorepo
+#### 2.1 Tạo hai repository
+
+Việc tách repo dựa theo phân công của nhóm: hai bạn FE phụ trách một repo, ba bạn BE phụ trách repo còn lại. Các Lambda nằm **cùng repo backend** — chúng dùng chung schema cơ sở dữ liệu, lịch sử migration Alembic và do cùng nhóm phát triển.
 
 ```bash
-gh repo create <GH_ORG>/court-booking --private --clone
-cd court-booking
-mkdir -p frontend backend/app backend/alembic backend/deploy/scripts lambdas/process_payment lambdas/confirm_booking .github/workflows
+gh repo create <GH_ORG>/court-booking-frontend --private --clone
+gh repo create <GH_ORG>/court-booking-backend  --private --clone
+
+cd court-booking-frontend
+mkdir -p src .github/workflows
+
+cd ../court-booking-backend
+mkdir -p backend/app backend/alembic backend/deploy/scripts lambdas/process_payment lambdas/confirm_booking .github/workflows
 ```
 
 Cấu trúc mục tiêu:
 
 ```
-court-booking/
-├── frontend/                    # React + Vite + TS (Danh, Hùng)
-│   ├── src/
-│   └── package.json
-├── backend/                     # FastAPI monolith (Thành, Nguyên, Hiếu)
+court-booking-frontend/          # Danh & Hùng
+├── src/
+│   └── api/schema.d.ts          #   sinh từ OpenAPI của backend (§4.3)
+├── package.json
+├── amplify.yml                  # Build spec Amplify
+└── .github/workflows/
+    └── ci.yml                   # kiểm tra PR: tsc + eslint + vitest + contract check
+
+court-booking-backend/           # Thành, Nguyên, Hiếu
+├── backend/                     # FastAPI monolith
 │   ├── app/                     #   mã ứng dụng
 │   ├── alembic/                 #   migration DB
 │   ├── deploy/
@@ -94,32 +108,35 @@ court-booking/
 │   │   └── scripts/             #   các script lifecycle hook
 │   ├── pyproject.toml
 │   └── requirements.txt
-├── lambdas/                     # Luồng thanh toán serverless (Hiếu)
+├── lambdas/                     # Luồng thanh toán serverless
 │   ├── process_payment/app.py
 │   ├── confirm_booking/app.py
 │   ├── template.yaml            #   SAM: 2 hàm + API GW + SNS
 │   └── samconfig.toml
-├── amplify.yml                  # Build spec Amplify (frontend)
 └── .github/workflows/
-    ├── ci.yml                   # kiểm tra PR (lọc theo path)
+    ├── ci.yml                   # kiểm tra PR (lọc theo path: backend / lambdas)
     ├── deploy-backend.yml       # main → CodeDeploy → EC2 ASG
     └── deploy-lambdas.yml       # main → SAM deploy
 ```
 
-#### 2.2 Bảo vệ nhánh
+#### 2.2 Bảo vệ nhánh (cả hai repo)
 
-GitHub → repo → **Settings → Branches → Add rule** cho `main`:
+GitHub → từng repo → **Settings → Branches → Add rule** cho `main`:
 
 - Yêu cầu pull request trước khi merge (1 phê duyệt)
-- Yêu cầu status check pass — chọn `ci / frontend`, `ci / backend`, `ci / lambdas` (sau lần chạy CI đầu tiên)
+- Yêu cầu status check pass — repo frontend: `ci / quality`, `ci / contract`; repo backend: `ci / backend`, `ci / lambdas` (chọn được sau lần chạy CI đầu tiên)
 - Không cho phép bỏ qua các thiết lập trên
 
-#### 2.3 GitHub Environments (cổng phê duyệt deploy)
+#### 2.3 GitHub Environments (cổng phê duyệt deploy — chỉ repo backend)
 
-GitHub → **Settings → Environments**:
+Cổng phê duyệt deploy nằm ở **repo backend** (frontend deploy qua Amplify, nơi merge vào `main` đã được bảo vệ bằng review PR):
+
+GitHub → `court-booking-backend` → **Settings → Environments**:
 
 1. Tạo `dev` — không quy tắc bảo vệ (tự động deploy khi merge).
 2. Tạo `prod` — Required reviewers → thêm Hiếu. Mọi deploy prod sẽ chờ một cú nhấp phê duyệt.
+
+> **Quy ước phối hợp giữa hai repo:** với tính năng liên quan cả hai phía, PR backend merge trước và deploy lên dev; PR frontend merge sau, khi contract check đã pass với API dev vừa cập nhật.
 
 ---
 
@@ -137,7 +154,7 @@ aws iam create-open-id-connect-provider \
 
 #### 3.2 Deploy role — pipeline backend
 
-`trust-backend.json` — chỉ workflow từ _đúng repo này_ mới assume được:
+`trust-backend.json` — chỉ workflow từ **repo backend** mới assume được. (Repo frontend hoàn toàn không cần AWS role: Amplify tự thực hiện deploy.)
 
 ```json
 {
@@ -154,7 +171,7 @@ aws iam create-open-id-connect-provider \
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:<GH_ORG>/<GH_REPO>:*"
+          "token.actions.githubusercontent.com:sub": "repo:<GH_ORG>/court-booking-backend:*"
         }
       }
     }
@@ -233,39 +250,57 @@ aws ssm put-parameter --name /court-booking/prod/DATABASE_URL \
 
 #### 4.1 Build spec
 
-`amplify.yml` ở gốc repo (hỗ trợ monorepo):
+`amplify.yml` ở gốc repo `court-booking-frontend` (repo chuyên biệt nên không cần lớp bọc monorepo):
 
 ```yaml
 version: 1
-applications:
-  - appRoot: frontend
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - npm ci
-        build:
-          commands:
-            - npm run build
-      artifacts:
-        baseDirectory: dist
-        files:
-          - "**/*"
-      cache:
-        paths:
-          - node_modules/**/*
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
 ```
 
 #### 4.2 Kết nối repo
 
-1. Console → **Amplify → Create new app → GitHub** → cấp quyền → chọn `<GH_ORG>/court-booking`, nhánh `main`.
-2. Amplify tự nhận `amplify.yml`; đặt **App root** = `frontend` (hộp thoại monorepo).
-3. **Environment variables**: `VITE_API_URL = https://<ELB_DNS_hoặc_domain>/api/v1`.
-4. **App settings → Previews → Enable pull request previews** trên `main` — mỗi PR có URL riêng (vòng review của Danh & Hùng).
-5. Định tuyến SPA — **Rewrites and redirects**, thêm rule 200 (Rewrite) từ
+1. Console → **Amplify → Create new app → GitHub** → cấp quyền → chọn `<GH_ORG>/court-booking-frontend`, nhánh `main` (không có bước chọn app-root — gốc repo chính là ứng dụng).
+2. **Environment variables**: `VITE_API_URL = https://<ELB_DNS_hoặc_domain>/api/v1`.
+3. **App settings → Previews → Enable pull request previews** trên `main` — mỗi PR có URL riêng (vòng review của Danh & Hùng).
+4. Định tuyến SPA — **Rewrites and redirects**, thêm rule 200 (Rewrite) từ
    `</^[^.]+$|\.(?!(css|js|map|json|png|svg|jpg|ico|txt|woff2?)$)([^.]+$)/>` về `/index.html`.
 
-**Kiểm chứng:** push một commit chạm `frontend/` → Amplify console hiển thị build → URL hosting phục vụ ứng dụng. Mở PR → URL preview xuất hiện trong PR checks.
+**Kiểm chứng:** push một commit lên repo frontend → Amplify console hiển thị build → URL hosting phục vụ ứng dụng. Mở PR → URL preview xuất hiện trong PR checks.
+
+#### 4.3 Kiểm tra API contract (chi phí đánh đổi của hai repo — chỉ cần xử lý một lần)
+
+Với hai repo tách biệt, thay đổi endpoint và phần UI gọi endpoint đó không còn nằm chung một PR — nên sai lệch giữa API do backend định nghĩa và kiểu dữ liệu phía frontend phải được phát hiện tự động. FastAPI vốn đã sinh sẵn schema tại `/openapi.json`; CI của frontend sinh lại kiểu dữ liệu client từ backend **dev** và fail nếu kết quả thay đổi mà chưa được commit:
+
+```yaml
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Pull backend OpenAPI schema (dev)
+        run: curl -fsS https://<DEV_ELB_DNS>/openapi.json -o /tmp/openapi.json
+      - name: Regenerate client types
+        run: npx openapi-typescript /tmp/openapi.json -o src/api/schema.d.ts
+      - name: Fail on uncommitted drift
+        run: git diff --exit-code src/api/schema.d.ts
+```
+
+Khi backend thay đổi API, check `contract` của frontend sẽ fail ngay lúc mở PR — thay vì lỗi âm thầm lúc runtime. Cách xử lý cũng rất đơn giản: chạy lại `openapi-typescript` tại máy, commit file `schema.d.ts` mới sinh, và để `tsc` chỉ ra mọi chỗ trong UI cần cập nhật theo.
 
 ---
 
@@ -612,7 +647,29 @@ jobs:
 
 ### 7. Kiểm tra PR (quality gate)
 
-`.github/workflows/ci.yml` — chạy trên mỗi PR, lọc theo path nên chỉ thành phần bị ảnh hưởng mới build:
+Mỗi repo mang `ci.yml` riêng. Bản của frontend cực kỳ đơn giản (không cần lọc path — cả repo là một ứng dụng); bản của backend chỉ giữ filter để tách hai thành phần nội bộ.
+
+**`court-booking-frontend/.github/workflows/ci.yml`:**
+
+```yaml
+name: ci
+on:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx tsc --noEmit && npx eslint src && npx vitest run
+
+  # contract: xem §4.3 — sinh lại kiểu từ /openapi.json của backend dev
+```
+
+**`court-booking-backend/.github/workflows/ci.yml`:**
 
 ```yaml
 name: ci
@@ -623,7 +680,6 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      frontend: ${{ steps.f.outputs.frontend }}
       backend: ${{ steps.f.outputs.backend }}
       lambdas: ${{ steps.f.outputs.lambdas }}
     steps:
@@ -632,27 +688,8 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            frontend: ["frontend/**"]
-            backend:  ["backend/**"]
-            lambdas:  ["lambdas/**"]
-
-  frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          {
-            node-version: 20,
-            cache: npm,
-            cache-dependency-path: frontend/package-lock.json,
-          }
-      - run: npm ci
-        working-directory: frontend
-      - run: npx tsc --noEmit && npx eslint src && npx vitest run
-        working-directory: frontend
+            backend: ["backend/**"]
+            lambdas: ["lambdas/**"]
 
   backend:
     needs: changes
@@ -710,17 +747,18 @@ jobs:
 
 | #   | Công việc                                                  | Phụ trách      | Phụ thuộc        |
 | --- | ---------------------------------------------------------- | -------------- | ---------------- |
-| 1   | Tạo monorepo, bảo vệ nhánh, environments (§2)              | Hiếu           | —                |
-| 2   | OIDC provider + 2 deploy role + bucket artifact (§3)       | Hiếu           | Tài khoản AWS    |
-| 3   | Tham số SSM (dev + prod)                                   | Hiếu           | Endpoint RDS     |
-| 4   | Commit `ci.yml` — PR check hoạt động trước mọi mã ứng dụng | Hiếu           | 1                |
-| 5   | Kết nối Amplify + PR preview (§4)                          | Danh & Hùng    | 1                |
-| 6   | User-data launch template + instance role (§5.1–5.2)       | Hiếu           | VPC/ASG sẵn sàng |
-| 7   | CodeDeploy app + deployment group (§5.3)                   | Hiếu           | 6                |
-| 8   | `appspec.yml` + hooks + endpoint `/health` (§5.4)          | Thành & Nguyên | Khung FastAPI    |
-| 9   | `deploy-backend.yml` chạy xanh lần đầu (§5.5)              | Hiếu           | 7, 8             |
-| 10  | Template SAM + `deploy-lambdas.yml` (§6)                   | Hiếu           | 2                |
-| 11  | Diễn tập rollback — thực hành từng dòng của §8 một lần     | cả nhóm        | 9, 10            |
+| 1   | Tạo cả hai repo, bảo vệ nhánh, environments (§2)                 | Hiếu           | —                |
+| 2   | OIDC provider + 2 deploy role + bucket artifact (§3)             | Hiếu           | Tài khoản AWS    |
+| 3   | Tham số SSM (dev + prod)                                         | Hiếu           | Endpoint RDS     |
+| 4   | Commit `ci.yml` ở cả hai repo — check hoạt động trước mọi mã     | Hiếu           | 1                |
+| 5   | Kết nối Amplify với repo frontend + PR preview (§4)              | Danh & Hùng    | 1                |
+| 6   | User-data launch template + instance role (§5.1–5.2)             | Hiếu           | VPC/ASG sẵn sàng |
+| 7   | CodeDeploy app + deployment group (§5.3)                         | Hiếu           | 6                |
+| 8   | `appspec.yml` + hooks + endpoint `/health` (§5.4)                | Thành & Nguyên | Khung FastAPI    |
+| 9   | `deploy-backend.yml` chạy xanh lần đầu (§5.5)                    | Hiếu           | 7, 8             |
+| 10  | Template SAM + `deploy-lambdas.yml` (§6)                         | Hiếu           | 2                |
+| 11  | Job kiểm tra API contract (OpenAPI) trong repo frontend (§4.3)   | Danh & Hùng    | 5, 9             |
+| 12  | Diễn tập rollback — thực hành từng dòng của §8 một lần           | cả nhóm        | 9, 10            |
 
 ---
 
@@ -743,7 +781,7 @@ Tổng: gần như **bằng không** so với ước tính vận hành ~$45/thá
 
 | Viết tắt | Ý nghĩa |
 | --- | --- |
-| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| API | Giao diện lập trình ứng dụng — quy ước để các thành phần phần mềm giao tiếp với nhau |
 | ASG | Nhóm EC2 instance tự động tăng/giảm số lượng theo tải |
 | AWS | Nền tảng điện toán đám mây của Amazon |
 | BE | Backend — phần phía máy chủ của ứng dụng |

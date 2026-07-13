@@ -384,7 +384,7 @@ payments.status:   PENDING ──► SUCCESS
 | Viết tắt | Ý nghĩa |
 | --- | --- |
 | AI | Trí tuệ nhân tạo |
-| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| API | Giao diện lập trình ứng dụng — quy ước để các thành phần phần mềm giao tiếp với nhau |
 | AWS | Nền tảng điện toán đám mây của Amazon |
 | AZ | Vùng sẵn sàng — cụm trung tâm dữ liệu tách biệt trong một Region của AWS |
 | BE | Backend — phần phía máy chủ của ứng dụng |

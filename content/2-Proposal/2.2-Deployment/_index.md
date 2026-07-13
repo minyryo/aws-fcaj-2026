@@ -16,21 +16,21 @@ Summary:
 
 ### 1. CI/CD Design Overview
 
-**Design principle:** GitHub Actions as the single orchestrator; AWS-native services as deploy targets. One monorepo, three deployment paths matching the three architecture zones:
+**Design principle:** GitHub Actions as the single orchestrator; AWS-native services as deploy targets. Two repositories split along team ownership — `court-booking-frontend` (Danh & Hung) and `court-booking-backend` (FastAPI + Lambdas, BE team) — with three deployment paths matching the three architecture zones:
 
 ```
-                        ┌─────────────── GitHub monorepo ───────────────┐
-                        │  /frontend   /backend    /lambdas   /infra    │
-                        └──────┬────────────┬──────────┬────────────────┘
-        PR opened:        lint + test   lint + test  lint + test   (path-filtered)
-                               │            │             │
-        merge to main:         ▼            ▼             ▼
-                        ┌────────────┐ ┌─────────────┐ ┌──────────────┐
-                        │  Amplify   │ │ GH Actions  │ │ GH Actions   │
-                        │  built-in  │ │ → CodeDeploy│ │ → SAM deploy │
-                        │  CI/CD     │ │ → EC2 ASG   │ │ → Lambda ×2  │
-                        └────────────┘ └─────────────┘ │ + API GW     │
-                                                       └──────────────┘
+              ┌─ court-booking-frontend ─┐   ┌────── court-booking-backend ──────┐
+              │    React + Vite (TS)     │   │   /backend           /lambdas     │
+              └────────────┬─────────────┘   └───────┬──────────────────┬────────┘
+PR opened:      lint + test + contract        lint + test          lint + test
+                       check                   (path-filtered within the repo)
+merge to main:             ▼                          ▼                  ▼
+              ┌────────────────┐             ┌─────────────┐    ┌──────────────┐
+              │    Amplify     │             │ GH Actions  │    │ GH Actions   │
+              │ built-in CI/CD │             │ → CodeDeploy│    │ → SAM deploy │
+              └────────────────┘             │ → EC2 ASG   │    │ → Lambda ×2  │
+                                             └─────────────┘    │ + API GW     │
+                                                                └──────────────┘
 ```
 
 | Component                       | Pipeline                                              | Rationale                                                                                                                                                                       |
@@ -43,13 +43,15 @@ Summary:
 **Cross-cutting decisions:**
 
 1. **GitHub OIDC → IAM roles** — no long-lived AWS keys in GitHub secrets; one least-privilege role per pipeline.
-2. **Monorepo with path filters** — a frontend PR never triggers a backend deploy; one review flow for a 5-person team.
+2. **Two repos along team ownership** — FE and BE ship on independent cadences; API contract drift between them is caught by an OpenAPI type-check job in the frontend repo (§4.3). Inside the backend repo, path filters keep the backend and lambda pipelines independent.
 3. **Two environments, gated** — merges auto-deploy to dev; prod waits behind a GitHub Environment approval.
 4. **Quality gates on every PR** — `ruff` + `pytest` (+ Postgres service container), `tsc` + `eslint` + `vitest`.
 
 #### Alternatives considered — and why they weren't picked
 
 **Full AWS CodePipeline + CodeBuild** end-to-end would be the "pure AWS" answer, but: CodeBuild costs money per build minute where GitHub Actions is free for public/edu repos, the developer experience is clunkier (log diving in the console vs. PR-inline checks), and the team already lives in GitHub. We still get real AWS-service depth via CodeDeploy + SAM + Amplify + OIDC/IAM — arguably the best of both worlds, and each of those is a résumé-relevant AWS service.
+
+**A single monorepo instead of two repos.** One repo gives atomic cross-stack PRs and a single review flow — attractive on paper. But the FE pair and the BE trio barely touch each other's code, the toolchains are disjoint (npm vs. Python), and Amplify connects more simply to a dedicated frontend repo. The one monorepo advantage that genuinely matters — keeping the API contract in sync — is recovered by the OpenAPI type-generation check (§4.3), so the repo boundary follows the team boundary instead.
 
 **Containers on ECS/Fargate instead of EC2 + CodeDeploy.** Containerizing FastAPI would modernize the deploy story (immutable images, local/prod parity), but it replaces the EC2 monolith committed to in the [Architecture Design](../2.1-architecture/) — a different compute architecture, not just a different pipeline. It also adds Docker, ECR, and ECS as three new things to learn inside an 8-week window, for no functional gain at this scale. Worth revisiting after the program if the app lives on.
 
@@ -65,28 +67,40 @@ Summary:
 4. **The migration step assumes at least one healthy instance is running.** The SSM step targets the first running tagged instance — fine at this scale, but it's an assumption worth knowing when debugging a first-ever deploy into an empty ASG.
 
 > Placeholders used throughout — replace globally before running anything:
-> `<ACCOUNT_ID>` (12-digit AWS account), `<REGION>` (e.g. `ap-southeast-1`), `<GH_ORG>/<GH_REPO>`.
+> `<ACCOUNT_ID>` (12-digit AWS account), `<REGION>` (e.g. `ap-southeast-1`), `<GH_ORG>` (GitHub org or username). The two repos are named `court-booking-frontend` and `court-booking-backend`.
 
 ---
 
 ### 2. Repository Initialization
 
-#### 2.1 Create the monorepo
+#### 2.1 Create the two repositories
+
+The repo boundary follows the team boundary: the FE pair owns one repo, the BE trio owns the other. The Lambdas live **with the backend** — they share the database schema, the Alembic migration history, and the same owners.
 
 ```bash
-gh repo create <GH_ORG>/court-booking --private --clone
-cd court-booking
-mkdir -p frontend backend/app backend/alembic backend/deploy/scripts lambdas/process_payment lambdas/confirm_booking .github/workflows
+gh repo create <GH_ORG>/court-booking-frontend --private --clone
+gh repo create <GH_ORG>/court-booking-backend  --private --clone
+
+cd court-booking-frontend
+mkdir -p src .github/workflows
+
+cd ../court-booking-backend
+mkdir -p backend/app backend/alembic backend/deploy/scripts lambdas/process_payment lambdas/confirm_booking .github/workflows
 ```
 
-Target structure:
+Target structures:
 
 ```
-court-booking/
-├── frontend/                    # React + Vite + TS (Danh, Hung)
-│   ├── src/
-│   └── package.json
-├── backend/                     # FastAPI monolith (Thanh, Nguyen, Hieu)
+court-booking-frontend/          # Danh & Hung
+├── src/
+│   └── api/schema.d.ts          #   generated from the backend's OpenAPI (§4.3)
+├── package.json
+├── amplify.yml                  # Amplify build spec
+└── .github/workflows/
+    └── ci.yml                   # PR checks: tsc + eslint + vitest + contract check
+
+court-booking-backend/           # Thanh, Nguyen, Hieu
+├── backend/                     # FastAPI monolith
 │   ├── app/                     #   application code
 │   ├── alembic/                 #   DB migrations
 │   ├── deploy/
@@ -94,32 +108,35 @@ court-booking/
 │   │   └── scripts/             #   lifecycle hook scripts
 │   ├── pyproject.toml
 │   └── requirements.txt
-├── lambdas/                     # Serverless payment path (Hieu)
+├── lambdas/                     # Serverless payment path
 │   ├── process_payment/app.py
 │   ├── confirm_booking/app.py
 │   ├── template.yaml            #   SAM: 2 functions + API GW + SNS
 │   └── samconfig.toml
-├── amplify.yml                  # Amplify build spec (frontend)
 └── .github/workflows/
-    ├── ci.yml                   # PR checks (path-filtered)
+    ├── ci.yml                   # PR checks (path-filtered: backend / lambdas)
     ├── deploy-backend.yml       # main → CodeDeploy → EC2 ASG
     └── deploy-lambdas.yml       # main → SAM deploy
 ```
 
-#### 2.2 Branch protection
+#### 2.2 Branch protection (both repos)
 
-GitHub → repo → **Settings → Branches → Add rule** for `main`:
+GitHub → each repo → **Settings → Branches → Add rule** for `main`:
 
 - Require a pull request before merging (1 approval)
-- Require status checks to pass — select `ci / frontend`, `ci / backend`, `ci / lambdas` (after first CI run)
+- Require status checks to pass — frontend repo: `ci / quality`, `ci / contract`; backend repo: `ci / backend`, `ci / lambdas` (selectable after the first CI run)
 - Do not allow bypassing the above settings
 
-#### 2.3 GitHub Environments (deploy gate)
+#### 2.3 GitHub Environments (deploy gate — backend repo only)
 
-GitHub → **Settings → Environments**:
+The deploy gates live in the **backend repo** (the frontend deploys via Amplify, where merge-to-main is already protected by PR review):
+
+GitHub → `court-booking-backend` → **Settings → Environments**:
 
 1. Create `dev` — no protection rules (auto-deploy on merge).
 2. Create `prod` — Required reviewers → add Hieu. Every prod deploy then waits for one click of approval.
+
+> **Cross-repo convention:** for features touching both sides, the backend PR merges first and reaches dev; the frontend PR follows once the contract check passes against the updated dev API.
 
 ---
 
@@ -137,7 +154,7 @@ aws iam create-open-id-connect-provider \
 
 #### 3.2 Deploy role — backend pipeline
 
-`trust-backend.json` — only workflows from _this repo_ can assume it:
+`trust-backend.json` — only workflows from the **backend repo** can assume it. (The frontend repo needs no AWS role at all: Amplify performs its own deployments.)
 
 ```json
 {
@@ -154,7 +171,7 @@ aws iam create-open-id-connect-provider \
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:<GH_ORG>/<GH_REPO>:*"
+          "token.actions.githubusercontent.com:sub": "repo:<GH_ORG>/court-booking-backend:*"
         }
       }
     }
@@ -233,39 +250,57 @@ aws ssm put-parameter --name /court-booking/prod/DATABASE_URL \
 
 #### 4.1 Build spec
 
-`amplify.yml` at repo root (monorepo-aware):
+`amplify.yml` at the root of `court-booking-frontend` (a dedicated repo means no monorepo wrapper is needed):
 
 ```yaml
 version: 1
-applications:
-  - appRoot: frontend
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - npm ci
-        build:
-          commands:
-            - npm run build
-      artifacts:
-        baseDirectory: dist
-        files:
-          - "**/*"
-      cache:
-        paths:
-          - node_modules/**/*
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
 ```
 
 #### 4.2 Connect the repo
 
-1. Console → **Amplify → Create new app → GitHub** → authorize → select `<GH_ORG>/court-booking`, branch `main`.
-2. Amplify detects `amplify.yml`; set **App root** = `frontend` (monorepo prompt).
-3. **Environment variables**: `VITE_API_URL = https://<ELB_DNS_or_domain>/api/v1`.
-4. **App settings → Previews → Enable pull request previews** on `main` — every PR gets its own URL (this is Danh & Hung's review loop).
-5. SPA routing — **Rewrites and redirects**, add a 200 (Rewrite) rule from
+1. Console → **Amplify → Create new app → GitHub** → authorize → select `<GH_ORG>/court-booking-frontend`, branch `main` (no app-root prompt — the repo root *is* the app).
+2. **Environment variables**: `VITE_API_URL = https://<ELB_DNS_or_domain>/api/v1`.
+3. **App settings → Previews → Enable pull request previews** on `main` — every PR gets its own URL (this is Danh & Hung's review loop).
+4. SPA routing — **Rewrites and redirects**, add a 200 (Rewrite) rule from
    `</^[^.]+$|\.(?!(css|js|map|json|png|svg|jpg|ico|txt|woff2?)$)([^.]+$)/>` to `/index.html`.
 
-**Verify:** push a commit touching `frontend/` → Amplify console shows the build → the hosted URL serves the app. Open a PR → a preview URL appears in the PR checks.
+**Verify:** push a commit to the frontend repo → Amplify console shows the build → the hosted URL serves the app. Open a PR → a preview URL appears in the PR checks.
+
+#### 4.3 API contract check (the price of two repos, paid once)
+
+With separate repos, an endpoint change and its UI usage no longer land in one PR — so drift between the FastAPI contract and the frontend types must be caught mechanically. FastAPI already publishes its schema at `/openapi.json`; the frontend CI regenerates its client types from the **dev** backend and fails if they changed without being committed:
+
+```yaml
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Pull backend OpenAPI schema (dev)
+        run: curl -fsS https://<DEV_ELB_DNS>/openapi.json -o /tmp/openapi.json
+      - name: Regenerate client types
+        run: npx openapi-typescript /tmp/openapi.json -o src/api/schema.d.ts
+      - name: Fail on uncommitted drift
+        run: git diff --exit-code src/api/schema.d.ts
+```
+
+A backend contract change then breaks the frontend's `contract` check loudly at PR time — instead of silently at runtime. When it fires, the fix is one command locally: rerun `openapi-typescript`, commit the regenerated `schema.d.ts`, and let `tsc` point at every UI usage that needs updating.
 
 ---
 
@@ -612,7 +647,29 @@ jobs:
 
 ### 7. PR Checks (the quality gate)
 
-`.github/workflows/ci.yml` — runs on every PR, path-filtered so only affected components build:
+Each repo carries its own `ci.yml`. The frontend one is trivially simple (no path filtering needed — the whole repo is one app); the backend one keeps a filter only to separate its two internal components.
+
+**`court-booking-frontend/.github/workflows/ci.yml`:**
+
+```yaml
+name: ci
+on:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx tsc --noEmit && npx eslint src && npx vitest run
+
+  # contract: see §4.3 — regenerates types from the dev backend's /openapi.json
+```
+
+**`court-booking-backend/.github/workflows/ci.yml`:**
 
 ```yaml
 name: ci
@@ -623,7 +680,6 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      frontend: ${{ steps.f.outputs.frontend }}
       backend: ${{ steps.f.outputs.backend }}
       lambdas: ${{ steps.f.outputs.lambdas }}
     steps:
@@ -632,27 +688,8 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            frontend: ["frontend/**"]
-            backend:  ["backend/**"]
-            lambdas:  ["lambdas/**"]
-
-  frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          {
-            node-version: 20,
-            cache: npm,
-            cache-dependency-path: frontend/package-lock.json,
-          }
-      - run: npm ci
-        working-directory: frontend
-      - run: npx tsc --noEmit && npx eslint src && npx vitest run
-        working-directory: frontend
+            backend: ["backend/**"]
+            lambdas: ["lambdas/**"]
 
   backend:
     needs: changes
@@ -710,17 +747,18 @@ jobs:
 
 | #   | Task                                                  | Owner          | Depends on       |
 | --- | ----------------------------------------------------- | -------------- | ---------------- |
-| 1   | Create monorepo, branch protection, environments (§2) | Hieu           | —                |
-| 2   | OIDC provider + 2 deploy roles + artifact bucket (§3) | Hieu           | AWS account      |
-| 3   | SSM parameters (dev + prod)                           | Hieu           | RDS endpoint     |
-| 4   | Commit `ci.yml` — PR checks live before any app code  | Hieu           | 1                |
-| 5   | Connect Amplify + PR previews (§4)                    | Danh & Hung    | 1                |
-| 6   | Launch template user-data + instance role (§5.1–5.2)  | Hieu           | VPC/ASG exists   |
-| 7   | CodeDeploy app + deployment group (§5.3)              | Hieu           | 6                |
-| 8   | `appspec.yml` + hooks + `/health` endpoint (§5.4)     | Thanh & Nguyen | FastAPI skeleton |
-| 9   | `deploy-backend.yml` first green run (§5.5)           | Hieu           | 7, 8             |
-| 10  | SAM template + `deploy-lambdas.yml` (§6)              | Hieu           | 2                |
-| 11  | Rollback drill — practice each row of §8 once         | everyone       | 9, 10            |
+| 1   | Create both repos, branch protection, environments (§2)   | Hieu           | —                |
+| 2   | OIDC provider + 2 deploy roles + artifact bucket (§3)      | Hieu           | AWS account      |
+| 3   | SSM parameters (dev + prod)                                | Hieu           | RDS endpoint     |
+| 4   | Commit `ci.yml` in both repos — checks live before app code | Hieu           | 1                |
+| 5   | Connect Amplify to the frontend repo + PR previews (§4)    | Danh & Hung    | 1                |
+| 6   | Launch template user-data + instance role (§5.1–5.2)       | Hieu           | VPC/ASG exists   |
+| 7   | CodeDeploy app + deployment group (§5.3)                   | Hieu           | 6                |
+| 8   | `appspec.yml` + hooks + `/health` endpoint (§5.4)          | Thanh & Nguyen | FastAPI skeleton |
+| 9   | `deploy-backend.yml` first green run (§5.5)                | Hieu           | 7, 8             |
+| 10  | SAM template + `deploy-lambdas.yml` (§6)                   | Hieu           | 2                |
+| 11  | OpenAPI contract-check job in the frontend repo (§4.3)     | Danh & Hung    | 5, 9             |
+| 12  | Rollback drill — practice each row of §8 once              | everyone       | 9, 10            |
 
 ---
 

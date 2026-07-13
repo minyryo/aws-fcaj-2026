@@ -148,7 +148,7 @@ Phần này hợp nhất ba bản thiết kế backend riêng lẻ — thiết k
 
 #### 6.1 Tài liệu API thống nhất (15 endpoint)
 
-**Xác thực — 5 endpoint** (giữ nguyên hợp đồng API từ thiết kế của Nguyên, triển khai lại dưới dạng FastAPI wrapper quanh Cognito)
+**Xác thực — 5 endpoint** (giữ nguyên đặc tả API từ thiết kế của Nguyên, triển khai lại dưới dạng FastAPI wrapper quanh Cognito)
 
 | # | Endpoint                | Method | Input                                     | Output                                             | Use Case                                                                                                                          |
 | - | ----------------------- | ------ | ------------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -307,7 +307,7 @@ WHERE (status != 'CANCELLED');
 | Phiên & buộc đăng xuất     | Bảng `refresh_tokens` với `is_revoked`                  | **Cognito refresh token + `GlobalSignOut`** — cùng khả năng, không cần ghi DB                                |
 | RBAC / đa vai trò          | Bảng `roles` + `user_roles`                             | **Cognito Groups** — người dùng thuộc nhiều group vẫn giữ được yêu cầu đa vai trò; JWT mang `cognito:groups` |
 | `users.username`           | Cột tùy chọn                                            | Loại bỏ — dùng thuộc tính `preferred_username` của Cognito                                                   |
-| Hợp đồng API xác thực      | 5 endpoint thao tác trên bảng cục bộ                    | **Giữ nguyên 5 hợp đồng**, triển khai lại dưới dạng FastAPI wrapper quanh Cognito API                        |
+| Đặc tả API xác thực        | 5 endpoint thao tác trên bảng cục bộ                    | **Giữ nguyên đặc tả cả 5 endpoint**, triển khai lại dưới dạng FastAPI wrapper quanh Cognito API              |
 | Luồng xác thực             | JWT ngắn hạn + refresh token tự quản lý                 | Luồng giống hệt, với **Cognito là bên cấp phát token**                                                       |
 
 **So với phiên bản của Thành:**
@@ -375,7 +375,7 @@ Chi phí có thể giảm đáng kể bằng cách sử dụng EC2 Reserved Inst
 
 | Viết tắt | Ý nghĩa |
 | --- | --- |
-| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| API | Giao diện lập trình ứng dụng — quy ước để các thành phần phần mềm giao tiếp với nhau |
 | AWS | Nền tảng điện toán đám mây của Amazon |
 | AZ | Vùng sẵn sàng — cụm trung tâm dữ liệu tách biệt trong một Region của AWS |
 | CDN | Mạng phân phối nội dung — cache phân tán địa lý, phục vụ nội dung tĩnh gần người dùng |

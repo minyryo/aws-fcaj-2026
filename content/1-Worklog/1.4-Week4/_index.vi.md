@@ -8,7 +8,7 @@ pre: " <b> 1.4. </b> "
 
 ### Mục tiêu tuần 4:
 
-- Hoàn thành các solution **AWS Cloud Quest: Cloud Practitioner** còn lại ngoài yêu cầu badge — triển khai serverless API, API dùng DynamoDB, giám sát tài nguyên và công cụ phát triển.
+- Hoàn thành các solution **AWS Cloud Quest: Cloud Practitioner** còn lại ngoài yêu cầu badge — triển khai serverless API, API dùng DynamoDB, giám sát tài nguyên, công cụ phát triển và lập trình với trợ lý AI Amazon Q Developer.
 - Đẩy tiến độ Builder tiến tới Level 12 và củng cố kinh nghiệm thực hành trên các dịch vụ compute, API, cơ sở dữ liệu, giám sát và DevOps.
 
 ### Các công việc cần triển khai trong tuần này:
@@ -17,6 +17,7 @@ pre: " <b> 1.4. </b> "
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- | ------------------------------------------------------------------------------------- |
 | 2   | - **AWS Skill Builder — Cloud Quest: Cloud Practitioner** <br>&emsp; + Deploying RESTful APIs (hoàn thành chế độ standard) <br>&emsp; + API with Database (AI mode + standard) | 06/07/2026   | 06/07/2026      | [AWS Skill Builder](https://skillsprofile.skillbuilder.aws/user/minervaph/cloudquest) |
 | 3   | - **AWS Skill Builder — Cloud Quest: Cloud Practitioner** <br>&emsp; + Resource Monitoring (AI mode + standard) <br>&emsp; + Set Up a Cloud Development Environment          | 07/07/2026   | 07/07/2026      | [AWS Skill Builder](https://skillsprofile.skillbuilder.aws/user/minervaph/cloudquest) |
+| 4   | - **AWS Skill Builder — Cloud Quest: Cloud Practitioner** <br>&emsp; + Build Apps Faster with Amazon Q Developer                                                             | 08/07/2026   | 08/07/2026      | [AWS Skill Builder](https://skillsprofile.skillbuilder.aws/user/minervaph/cloudquest) |
 
 ### Kết quả đạt được tuần 4:
 
@@ -28,26 +29,32 @@ pre: " <b> 1.4. </b> "
 | API with Database                      | 06/07/2026 | Amazon DynamoDB như một giải pháp NoSQL serverless — hiệu năng, bảo mật và use case. Lab: xây dựng serverless API dựa trên DynamoDB.          |
 | Resource Monitoring                    | 07/07/2026 | Giám sát với Amazon CloudWatch — metrics, dashboards và alarms. Lab: tạo dashboard và cấu hình alarm.                                          |
 | Set Up a Cloud Development Environment | 07/07/2026 | Thiết lập môi trường phát triển trên đám mây và làm việc với code repository (AWS Cloud9, AWS CodeCommit). Lab: khởi chạy Cloud9 IDE và clone repository. |
+| Build Apps Faster with Amazon Q Developer | 08/07/2026 | Rút ngắn thời gian phát triển ứng dụng với trợ lý lập trình AI trên đám mây (Amazon Q Developer / CodeWhisperer), hỗ trợ nhiều nền tảng và ngôn ngữ. Lab: dùng AI hỗ trợ viết code để xây dựng và triển khai ứng dụng nhanh hơn. |
 
 **Điểm đạt được trong tuần**
 
 | Chỉ số                       | Cuối Tuần 3 | Đạt được trong Tuần 4 | Cuối Tuần 4 |
 | ---------------------------- | ----------- | --------------------- | ----------- |
-| Tổng điểm danh tiếng         | 503         | +137                  | 640         |
-| Tổng số solution đã xây dựng | 13          | +4                    | 17          |
+| Tổng điểm danh tiếng         | 503         | +227                  | 730         |
+| Tổng số solution đã xây dựng | 13          | +5                    | 18          |
 
 Điểm danh tiếng đạt được trong tuần (phân bổ ước lượng):
 
-| Dịch vụ            | Điểm |
-| ------------------ | ---- |
-| Amazon EC2         | 37   |
-| Amazon API Gateway | 27   |
-| AWS Lambda         | 15   |
-| Amazon CloudWatch  | 15   |
-| Amazon S3          | 13   |
-| Amazon DynamoDB    | 10   |
-| AWS Cloud9         | 10   |
-| AWS CodeCommit     | 10   |
+| Dịch vụ              | Điểm |
+| -------------------- | ---- |
+| Amazon EC2           | 47   |
+| Amazon API Gateway   | 32   |
+| AWS Lambda           | 30   |
+| Amazon S3            | 23   |
+| Amazon VPC           | 15   |
+| Amazon CloudWatch    | 15   |
+| Amazon DynamoDB      | 15   |
+| AWS Cloud9           | 10   |
+| AWS CodeCommit       | 10   |
+| Amazon CodeWhisperer | 10   |
+| Amazon Q             | 10   |
+| Elastic Load Balancing (ELB) | 5 |
+| Amazon Route 53      | 5    |
 
 > Điểm của các dịch vụ được dùng ở nhiều tuần (EC2, S3, Lambda, DynamoDB) được phân bổ về tuần hoàn thành solution tương ứng. Số liệu theo tuần là ước lượng và khớp với ảnh chụp tổng luỹ kế bên dưới.
 
@@ -77,33 +84,35 @@ _Set Up a Cloud Development Environment — 07/07/2026_
 
 ![Minh chứng hoàn thành Set Up a Cloud Development Environment](/images/1-Worklog/1.4-Week4/SetUpCloudDevelopmentEnvironment_20260707234753.png)
 
+_Build Apps Faster with Amazon Q Developer — 08/07/2026 (đang chờ bổ sung minh chứng)_
+
 ---
 
-### Tiến độ Cloud Quest — Ảnh chụp luỹ kế (tính đến 08/07/2026)
+### Tiến độ Cloud Quest — Ảnh chụp luỹ kế (tính đến 12/07/2026, cuối Tuần 4)
 
-Trạng thái tổng hợp sau Tuần 3 và Tuần 4 của hành trình **AWS Cloud Quest: Cloud Practitioner**.
+Kết quả luỹ kế của hành trình **AWS Cloud Quest: Cloud Practitioner** tính từ đầu chương trình (Tuần 1) — mọi số liệu bên dưới là tổng cộng dồn, không phải điểm của riêng từng tuần.
 
 **Builder Level**
 
-- **Level 11** — 88% (còn 2 solution nữa để lên Level 12)
-- **Tổng số solution đã xây dựng: 17**
+- **Level 11** — 93% (còn 1 solution nữa để lên Level 12)
+- **Tổng số solution đã xây dựng: 18**
 
 **Reputation Level**
 
-- **Level 46** — còn 18 điểm danh tiếng để lên Level 47
-- **Tổng điểm danh tiếng: 640**
+- **Level 50** — 99% (còn 5 điểm danh tiếng để lên Level 51)
+- **Tổng điểm danh tiếng: 730**
 
 | Dịch vụ                                  | Điểm |
 | ---------------------------------------- | ---- |
-| Amazon EC2                               | 175  |
-| Amazon S3                                | 56   |
-| Elastic Load Balancing (ELB)             | 47   |
+| Amazon EC2                               | 185  |
+| Amazon S3                                | 66   |
+| Elastic Load Balancing (ELB)             | 52   |
+| AWS Lambda                               | 52   |
+| Amazon VPC                               | 52   |
 | Amazon Elastic Compute Cloud (EC2)       | 46   |
-| Amazon VPC                               | 37   |
-| AWS Lambda                               | 37   |
+| Amazon DynamoDB                          | 36   |
 | Amazon Relational Database Service (RDS) | 35   |
-| Amazon DynamoDB                          | 31   |
-| Amazon API Gateway                       | 27   |
+| Amazon API Gateway                       | 32   |
 | AWS Identity and Access Management (IAM) | 25   |
 | Amazon Elastic File System               | 20   |
 | Amazon CloudWatch                        | 15   |
@@ -113,8 +122,11 @@ Trạng thái tổng hợp sau Tuần 3 và Tuần 4 của hành trình **AWS Cl
 | Amazon SageMaker                         | 10   |
 | AWS Cloud9                               | 10   |
 | AWS CodeCommit                           | 10   |
+| Amazon CodeWhisperer                     | 10   |
+| Amazon Q                                 | 10   |
 | AWS Billing Conductor                    | 8    |
 | Amazon RDS                               | 6    |
+| Amazon Route 53                          | 5    |
 | Amazon EC2 Auto Scaling                  | 5    |
 | Amazon Elastic File System (EFS)         | 4    |
 | AWS Budgets                              | 2    |
@@ -128,7 +140,7 @@ Trạng thái tổng hợp sau Tuần 3 và Tuần 4 của hành trình **AWS Cl
 | Viết tắt | Ý nghĩa |
 | --- | --- |
 | AI | Trí tuệ nhân tạo |
-| API | Giao diện lập trình ứng dụng — hợp đồng giao tiếp giữa các thành phần phần mềm |
+| API | Giao diện lập trình ứng dụng — quy ước để các thành phần phần mềm giao tiếp với nhau |
 | AWS | Nền tảng điện toán đám mây của Amazon |
 | EC2 | Amazon Elastic Compute Cloud — máy chủ ảo trên AWS |
 | EFS | Hệ thống tệp chia sẻ, co giãn của AWS |
