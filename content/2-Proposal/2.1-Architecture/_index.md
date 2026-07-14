@@ -136,7 +136,7 @@ This also allowed the team to demonstrate competency in both deployment models w
 
 This section consolidates the three individual backend deliverables — Hieu's payment design (Week 2), Thanh's booking design, and Nguyen's authentication design (both Week 3) — into a single canonical specification, as assigned in the 07/05/2026 team meeting.
 
-**Guiding principle: maximise the use of AWS managed services.** Wherever an AWS service natively covers a concern, the design delegates to it instead of rebuilding it in the database or application code. The largest consequence is in identity: Amazon Cognito is the sole credential and session authority, which lets the relational schema stay at **5 tables**.
+**Guiding principle: maximise the use of AWS managed services.** Wherever an AWS service natively covers a concern, the design delegates to it instead of rebuilding it in the database or application code. The largest consequence is in identity: Amazon Cognito is the sole credential and session authority, which keeps the relational schema at **5 core tables** (extended to **7** by the Court Manager revision — see §6.5).
 
 | Concern                                | Handled by                                                            | Replaces (from individual designs)                     |
 | -------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------- |
@@ -144,9 +144,9 @@ This section consolidates the three individual backend deliverables — Hieu's p
 | Social login (Google / Facebook)       | Cognito federated identity providers (Hosted UI)                      | `user_identities` table                                 |
 | Session lifecycle, refresh, revocation | Cognito refresh tokens + `GlobalSignOut`                              | `refresh_tokens` table                                  |
 | Roles & permissions (RBAC)             | Cognito Groups (`cognito:groups` claim in the JWT)                    | `roles` + `user_roles` bridge tables                    |
-| Multi-role users (player + court_owner)| A user may belong to multiple Cognito Groups                          | Many-to-many `user_roles` design                        |
+| Multi-role users (player + court_manager)| A user may belong to multiple Cognito Groups                          | Many-to-many `user_roles` design                        |
 
-#### 6.1 Unified API Documentation (15 endpoints)
+#### 6.1 Unified API Documentation (25 endpoints)
 
 **Authentication — 5 endpoints** (contracts from Nguyen's design, re-implemented as FastAPI wrappers around Cognito)
 
@@ -169,6 +169,21 @@ This section consolidates the three individual backend deliverables — Hieu's p
 | 5 | `/api/v1/bookings/{booking_id}`           | `DELETE` | Bearer token; `booking_id` (path)                                 | `204 No Content` (`status → CANCELLED`)                    | Cancels a booking (unpaid pending, or confirmed per the court cancellation policy).                                            |
 | 6 | `/api/v1/bookings/me`                     | `GET`    | Bearer token; `status`, `page`, `limit` (query)                   | `{ data: [...bookings], total, page, limit }`              | Retrieves the authenticated user's current bookings and history (`user_id` extracted from the JWT).                            |
 
+**Court Management — 10 endpoints** (added by the §6.5 revision; require the `court_manager` role via `cognito:groups`, plus an **ownership check** — `courts.owner_id` must equal the caller — on every court-specific route)
+
+| # | Endpoint | Method | Input | Output | Use Case |
+| - | -------- | ------ | ----- | ------ | -------- |
+| 1 | `/api/v1/courts` | `POST` | `name`, `description`, `address`, `sport_type`, `price_per_hour` | `court_id`, `status: "PENDING"` | Manager registers a new court; it goes live after admin approval. |
+| 2 | `/api/v1/courts/{court_id}` | `PUT` | Any of: `name`, `description`, `address`, `sport_type`, `price_per_hour` | Updated court object | Manager updates court info or the base rental fee. |
+| 3 | `/api/v1/courts/{court_id}/status` | `PATCH` | `status` (`ACTIVE` / `INACTIVE` / `MAINTENANCE`) | Updated court object | Temporarily close or reopen a court. |
+| 4 | `/api/v1/courts/{court_id}/images` | `POST` | `content_type` | `image_id`, `upload_url` (S3 presigned), `image_url` | Two-step photo upload: get a presigned URL, then PUT the file directly to S3. |
+| 5 | `/api/v1/courts/{court_id}/images/{image_id}` | `DELETE` | — | `204 No Content` | Remove a photo (`is_primary` reassignment handled server-side). |
+| 6 | `/api/v1/courts/{court_id}/schedule` | `PUT` | `[{day_of_week, open_time, close_time, price_per_hour?}]` | The saved schedule | Replace the weekly operating hours, with optional peak-pricing per window. |
+| 7 | `/api/v1/courts/{court_id}/blackouts` | `POST` | `start_time`, `end_time`, `reason` | `blackout_id` — or `409` with conflicting bookings | Block a one-off period; rejected if it overlaps a CONFIRMED booking. |
+| 8 | `/api/v1/courts/{court_id}/blackouts/{blackout_id}` | `DELETE` | — | `204 No Content` | Lift a closure. |
+| 9 | `/api/v1/manager/bookings` | `GET` | Query: `court_id?`, `date_from`, `date_to`, `status?`, `page`, `limit` | `{ data: [...bookings + player contact], total, page, limit }` | The incoming-bookings view across all courts the manager owns. |
+| 10 | `/api/v1/manager/bookings/{booking_id}` | `PATCH` | `action` (`cancel` / `complete` / `no_show`), `reason?` | Updated booking | Manager cancels (triggers the refund path via the payment Lambda + SNS notice) or closes out past bookings. |
+
 **Payment — 4 endpoints** (from Hieu's Week 2 design, unchanged)
 
 | # | Endpoint                         | Method | Input                                                             | Output                                                | Use Case                                                                                                                     |
@@ -178,7 +193,7 @@ This section consolidates the three individual backend deliverables — Hieu's p
 | 3 | `/api/v1/payments/{payment_id}`  | `GET`  | `payment_id` (path), Bearer token                                  | Full payment object                                    | Player or admin checks the status of a specific payment.                                                                       |
 | 4 | `/api/v1/payments`               | `GET`  | Bearer token; `page`, `limit`                                      | `{ data: [...payments], total, page, limit }`          | Player views their paginated payment history.                                                                                  |
 
-#### 6.2 Unified Database Design (5 tables)
+#### 6.2 Unified Database Design (7 tables)
 
 The only structurally revised table is `users` — reshaped around Cognito as the identity authority:
 
@@ -192,12 +207,46 @@ The only structurally revised table is `users` — reshaped around Cognito as th
 | `full_name`   | `VARCHAR(255)` | `NOT NULL`                   | Display name                                                                                  |
 | `phone`       | `VARCHAR(20)`  |                              | Contact number                                                                                |
 | `avatar_url`  | `VARCHAR(500)` |                              | S3 URL of profile photo                                                                       |
-| `role`        | `VARCHAR(20)`  | `DEFAULT 'player'`           | Primary role cached for DB queries; authorization uses the `cognito:groups` JWT claim         |
+| `role`        | `VARCHAR(20)`  | `DEFAULT 'player'`           | `player` / `admin` / `court_manager` — primary role cached for DB queries; authorization uses the `cognito:groups` JWT claim |
 | `is_active`   | `BOOLEAN`      | `DEFAULT true`               | Soft delete / suspension flag                                                                 |
 | `created_at`  | `TIMESTAMP`    | `DEFAULT NOW()`              | Account creation time                                                                         |
 | `updated_at`  | `TIMESTAMP`    | `DEFAULT NOW()`              | Last profile update                                                                           |
 
-> `password_hash` is intentionally absent: credentials live exclusively in Cognito. `courts`, `court_images`, `bookings`, and `payments` are carried over unchanged — full column specifications are in the [Week 2 worklog](/1-worklog/1.2-week2/).
+> `password_hash` is intentionally absent: credentials live exclusively in Cognito. `court_images` and `payments` are carried over unchanged — full column specifications are in the [Week 2 worklog](/1-worklog/1.2-week2/). `courts` and `bookings` are modified, and two scheduling tables are added, by the Court Manager revision (§6.5):
+
+**`courts`** (modified): `status` values become `PENDING` / `ACTIVE` / `INACTIVE` / `MAINTENANCE` / `REJECTED` — manager-registered courts default to `PENDING` until an admin approves them; public search returns only `ACTIVE`.
+
+**`bookings`** (modified): two audit columns added for manager actions —
+
+| Column                | Data Type | Constraints               | Description                                        |
+| --------------------- | --------- | ------------------------- | --------------------------------------------------- |
+| `cancelled_by`        | `UUID`    | `FK → users(id)`, nullable | Who cancelled (player, manager, or system)          |
+| `cancellation_reason` | `TEXT`    |                           | Free-text reason shown to the player                |
+
+`status` additionally gains `NO_SHOW` (set by the manager after a missed slot).
+
+**`court_schedules`** (new) — weekly recurring operating hours; multiple windows per day allowed (e.g. 06:00–11:00 and 16:00–22:00):
+
+| Column           | Data Type       | Constraints                        | Description                                                             |
+| ---------------- | --------------- | ---------------------------------- | ------------------------------------------------------------------------ |
+| `id`             | `UUID`          | `PRIMARY KEY`                      |                                                                          |
+| `court_id`       | `UUID`          | `NOT NULL, FK → courts(id)`        | Parent court                                                             |
+| `day_of_week`    | `SMALLINT`      | `NOT NULL, CHECK (0–6)`            | 0 = Monday                                                               |
+| `open_time`      | `TIME`          | `NOT NULL`                         | Window start                                                             |
+| `close_time`     | `TIME`          | `NOT NULL, CHECK (> open_time)`    | Window end                                                               |
+| `price_per_hour` | `DECIMAL(12,2)` | nullable                           | Peak-pricing override; `NULL` falls back to `courts.price_per_hour`      |
+
+**`court_blackouts`** (new) — one-off closures (maintenance, private events):
+
+| Column       | Data Type      | Constraints                 | Description       |
+| ------------ | -------------- | --------------------------- | ------------------ |
+| `id`         | `UUID`         | `PRIMARY KEY`               |                    |
+| `court_id`   | `UUID`         | `NOT NULL, FK → courts(id)` | Parent court       |
+| `start_time` | `TIMESTAMP`    | `NOT NULL`                  | Closure start      |
+| `end_time`   | `TIMESTAMP`    | `NOT NULL`                  | Closure end        |
+| `reason`     | `VARCHAR(255)` |                             | Shown to players   |
+
+**Availability rule:** a slot is bookable iff it lies inside a `court_schedules` window **and** does not overlap a `court_blackouts` row **and** no overlapping non-cancelled booking exists (the row lock + exclusion constraint in §6.3 still guard the last condition).
 
 {{<mermaid>}}
 erDiagram
@@ -232,6 +281,21 @@ VARCHAR image_url
 BOOLEAN is_primary
 TIMESTAMP created_at
 }
+court_schedules {
+UUID id PK
+UUID court_id FK
+SMALLINT day_of_week
+TIME open_time
+TIME close_time
+DECIMAL price_per_hour
+}
+court_blackouts {
+UUID id PK
+UUID court_id FK
+TIMESTAMP start_time
+TIMESTAMP end_time
+VARCHAR reason
+}
 bookings {
 UUID id PK
 UUID user_id FK
@@ -241,6 +305,8 @@ TIMESTAMP end_time
 DECIMAL total_amount
 VARCHAR status
 TEXT note
+UUID cancelled_by FK
+TEXT cancellation_reason
 TIMESTAMP created_at
 TIMESTAMP updated_at
 }
@@ -258,10 +324,12 @@ TIMESTAMP created_at
 TIMESTAMP updated_at
 }
 
-    users ||--o{ courts : "owns"
+    users ||--o{ courts : "manages"
     users ||--o{ bookings : "makes"
     users ||--o{ payments : "pays"
     courts ||--o{ court_images : "has"
+    courts ||--o{ court_schedules : "operates on"
+    courts ||--o{ court_blackouts : "closed by"
     courts ||--o{ bookings : "reserved via"
     bookings ||--o| payments : "paid by"
 
@@ -295,7 +363,7 @@ WHERE (status != 'CANCELLED');
 | `users.cognito_sub`   | Nullable `UNIQUE`                                      | **`UNIQUE, NOT NULL`** — the mandatory identity link                                  |
 | `users.is_active`     | Absent                                                 | **Added** (from Nguyen) — soft delete / suspension                                    |
 | Exclusion constraint  | Unconditioned on `(court_id, tsrange)`                 | **Refined** with `WHERE (status != 'CANCELLED')` + paired with row-level locking      |
-| API surface           | 4 payment endpoints                                    | **15 endpoints** across auth, booking, and payment                                    |
+| API surface           | 4 payment endpoints                                    | **25 endpoints** across auth, booking, court management, and payment                  |
 | Payment design        | —                                                      | Carried over **unchanged** (endpoints, `payments` table, 9-step flow)                 |
 
 **vs. Nguyen's version:**
@@ -318,6 +386,21 @@ WHERE (status != 'CANCELLED');
 | Double-booking prevention  | Two-layer design (row lock + partial constraint)  | **Adopted wholesale as the canonical mechanism**                              |
 | `users` table referenced   | Original Week 2 schema (`password_hash`, nullable `cognito_sub`) | Updated to the unified Cognito-centric `users` design            |
 | Payment flow & lifecycle   | Mirrored from Hieu's Week 2 design                | Unchanged                                                                     |
+
+#### 6.5 Design Revision (07/14/2026) — Court Manager Role
+
+The team identified a missing actor: the person who runs a court on the platform. The role existed nominally in the original schema (`court_owner` + `courts.owner_id`), but had **no API surface and no schedule model** — availability was derived solely from bookings, meaning a court had no opening hours and no way to close for maintenance.
+
+**Role name.** Renamed `court_owner` → **`court_manager`**: the person operating a court is often not its legal owner (staff, hired managers). Alternatives considered: `host` (friendly but vague), `partner` (marketplace-style, revisit if venues onboard as businesses), `venue_manager` (heavier, fits only if the platform expands beyond courts). Migration cost was near zero — a Cognito group name plus a default string in `users.role`.
+
+**Capabilities added** (endpoints in §6.1, schema in §6.2): register a court (admin-approved via the `PENDING` status), update court info / rental fee / photos, define weekly operating hours with optional peak pricing (`court_schedules`), declare one-off closures (`court_blackouts`), and handle incoming bookings (view across owned courts, cancel with audited reason, mark `COMPLETED` / `NO_SHOW`).
+
+**Two deliberate design decisions:**
+
+1. **No manager-approval gate on bookings.** Payment remains the confirmation mechanism, so the existing serverless payment flow is untouched. The manager *handles* bookings through visibility and cancellation, not a manual accept step — an accept-before-pay gate would complicate the payment flow for little benefit at this scale.
+2. **Ownership enforced in queries, not just role checks.** Every manager endpoint filters or validates `courts.owner_id` against the caller, so manager A can never read or modify manager B's courts — the standard defense against IDOR (Insecure Direct Object Reference).
+
+**Ripple effects:** Cognito group `court_manager` replaces `court_owner`; one Alembic migration (2 new tables, `courts.status` values, 2 `bookings` columns); `GET /courts/{id}/availability` now merges schedule + blackouts + bookings; `POST /bookings` additionally validates the slot lies inside operating hours; the frontend gains a manager dashboard section.
 
 ### 7. Timeline & Milestones
 
@@ -385,6 +468,7 @@ Costs can be reduced significantly by using EC2 Reserved Instances or Savings Pl
 | ELB | Elastic Load Balancer — distributes incoming traffic across instances |
 | FK | Foreign Key — a column referencing another table's primary key |
 | HTTP | HyperText Transfer Protocol |
+| IDOR | Insecure Direct Object Reference — accessing another user's resources by manipulating object IDs |
 | JSONB | JSON Binary — PostgreSQL's binary JSON column type |
 | JWT | JSON Web Token — signed token carrying identity claims |
 | MAU | Monthly Active Users |

@@ -55,6 +55,8 @@ merge to main:             ▼                          ▼                  ▼
 
 **Containers on ECS/Fargate instead of EC2 + CodeDeploy.** Containerizing FastAPI would modernize the deploy story (immutable images, local/prod parity), but it replaces the EC2 monolith committed to in the [Architecture Design](../2.1-architecture/) — a different compute architecture, not just a different pipeline. It also adds Docker, ECR, and ECS as three new things to learn inside an 8-week window, for no functional gain at this scale. Worth revisiting after the program if the app lives on.
 
+**Docker on EC2 — same architecture, containerized packaging.** Distinct from the ECS option above: the ASG + ELB + CodeDeploy design stays untouched; only the packaging changes (CI builds an image, pushes to Amazon ECR, and the CodeDeploy hooks swap `pip install`/`systemctl` for `docker pull`/`docker run`). The upside is real — one image ends environment drift across 3 dev machines + CI + EC2, and deploys stop running `pip install` on live instances. Not adopted initially because it adds Docker, ECR, and the Apple-Silicon cross-build gotcha (`docker buildx --platform linux/amd64`) to an already full learning budget. **Decision rule:** if the team loses more than ~half a day to environment drift ("passes on my machine, fails in CI"), switch at that point — the refit is cheap precisely because CodeDeploy stays. Until then, two low-cost measures capture most of the parity benefit: the committed `.python-version` (§2.4, step 2) and running local Postgres via Docker Compose (§2.4, step 6).
+
 **CDK or Terraform instead of SAM for the serverless path.** Terraform brings third-party state management, which cuts against the "maximise AWS services" principle. CDK is excellent but is a general-purpose IaC framework — heavier to learn than SAM's declarative template for what is exactly two functions, one HTTP API, and one SNS topic. SAM is the smallest tool that does the job, and a SAM → CDK migration later is straightforward.
 
 **GitHub Actions → S3 + CloudFront for the frontend instead of Amplify.** More control (cache policies, invalidations), but everything Amplify gives for free would have to be hand-rolled — most importantly per-PR preview URLs, which is the FE team's entire review loop.
@@ -137,6 +139,257 @@ GitHub → `court-booking-backend` → **Settings → Environments**:
 2. Create `prod` — Required reviewers → add Hieu. Every prod deploy then waits for one click of approval.
 
 > **Cross-repo convention:** for features touching both sides, the backend PR merges first and reaches dev; the frontend PR follows once the contract check passes against the updated dev API.
+
+#### 2.4 Scaffold the backend repo code (step by step)
+
+Run these on the machine of whoever inits the repo (Hieu). Order matters: scaffold and push **before** configuring branch protection (§2.2), so the status checks exist and are selectable.
+
+**Step 1 — prerequisites (once per machine)**
+
+```bash
+git --version            # any recent version
+gh auth login            # GitHub CLI, authorized for <GH_ORG>
+pyenv install 3.12       # once per machine; matches the EC2 runtime (§5.2)
+```
+
+> The team standardizes on **pyenv** for local Python. CI (`actions/setup-python`) and EC2 (`dnf install python3.12`) pin the same 3.12 line, so all three environments match.
+
+**Step 2 — create, clone, and lay out the skeleton**
+
+```bash
+gh repo create <GH_ORG>/court-booking-backend --private --clone
+cd court-booking-backend
+pyenv local 3.12         # writes .python-version — commit it: teammates on pyenv auto-switch
+mkdir -p backend/app/routers backend/tests backend/deploy/scripts \
+         lambdas/process_payment lambdas/confirm_booking .github/workflows
+```
+
+**Step 3 — dependencies + virtualenv**
+
+`backend/requirements.txt`:
+
+```
+fastapi
+gunicorn
+uvicorn[standard]
+sqlalchemy>=2.0
+psycopg[binary]
+alembic
+pydantic-settings
+boto3
+```
+
+`backend/requirements-dev.txt`:
+
+```
+-r requirements.txt
+pytest
+httpx
+ruff
+```
+
+Two equivalent ways to create the environment — pick either; nothing downstream cares (CI builds its own environment, and the EC2 deploy scripts use `/opt/court-booking/.venv` on the server regardless):
+
+**Variant A — pyenv-virtualenv** (auto-activation; the env lives centrally in `~/.pyenv/versions/`, nothing extra in the repo):
+
+```bash
+cd backend
+pyenv virtualenv 3.12 fcaj-env
+pyenv activate fcaj-env    # add eval "$(pyenv virtualenv-init -)" to ~/.zshrc for per-directory auto-activation
+pip install -r requirements-dev.txt
+```
+
+> Keep the committed `.python-version` as plain `3.12` (step 2). If you prefer auto-activation via `pyenv local fcaj-env`, be aware it writes the *env name* into `.python-version` — only commit that if the whole team creates an env with the same name.
+
+**Variant B — plain venv** (no extra tooling; the folder lives in the repo and is covered by `.gitignore`):
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate   # `python` resolves to 3.12 via the pyenv shim
+pip install -r requirements-dev.txt
+```
+
+> Editors auto-discover `.venv` by convention; with Variant A's named env, select the interpreter manually once (VS Code: `Python: Select Interpreter` → the `fcaj-env` entry under pyenv).
+
+**Step 4 — minimal FastAPI app with the `/health` endpoint**
+
+The health endpoint is deliberately the very first code in the repo — it is both the ELB health-check path and CodeDeploy's `validate.sh` target (§5.4).
+
+`backend/app/__init__.py` — empty file.
+
+`backend/app/config.py`:
+
+```python
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    app_env: str = "local"
+    database_url: str = "postgresql+psycopg://app:app@localhost:5432/courtbooking_dev"
+
+
+settings = Settings()
+```
+
+> On EC2 the real `DATABASE_URL` arrives as an environment variable populated from SSM Parameter Store (§3.5); `pydantic-settings` picks it up automatically. Locally the default above is used.
+
+`backend/app/main.py`:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI(title="Court Booking API", version="0.1.0")
+
+
+@app.get("/api/v1/health")
+def health() -> dict:
+    return {"status": "ok"}
+```
+
+`backend/tests/test_health.py`:
+
+```python
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+def test_health():
+    r = TestClient(app).get("/api/v1/health")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok"}
+```
+
+`backend/pyproject.toml` (tooling config):
+
+```toml
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+```
+
+**Step 5 — verify locally before anything else**
+
+```bash
+uvicorn app.main:app --reload --port 8000   # from backend/, venv active
+curl http://localhost:8000/api/v1/health    # → {"status":"ok"}
+ruff check . && pytest                      # both must pass
+```
+
+**Step 6 — Alembic + the first migration**
+
+```bash
+alembic init alembic
+```
+
+In the generated `alembic/env.py`, make the URL come from the environment (add after `config = context.config`):
+
+```python
+import os
+
+config.set_main_option(
+    "sqlalchemy.url",
+    os.environ.get("DATABASE_URL", "postgresql+psycopg://app:app@localhost:5432/courtbooking_dev"),
+)
+```
+
+To run migrations locally without installing Postgres natively, use Docker Compose for the database only — this mirrors what CI does with its service container. `docker-compose.yml` at the repo root:
+
+```yaml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: courtbooking_dev
+    ports: ["5432:5432"]
+```
+
+```bash
+docker compose up -d db
+```
+
+The first migration enables the extension that the double-booking exclusion constraint needs:
+
+```bash
+alembic revision -m "enable btree_gist"
+```
+
+```python
+def upgrade():
+    op.execute("CREATE EXTENSION IF NOT EXISTS btree_gist")
+
+
+def downgrade():
+    op.execute("DROP EXTENSION IF EXISTS btree_gist")
+```
+
+**Step 7 — deploy assets**
+
+Copy in the files from §5.2/§5.4: `backend/deploy/appspec.yml`, the four hook scripts under `backend/deploy/scripts/`, and `backend/deploy/court-booking.service`. Then:
+
+```bash
+chmod +x deploy/scripts/*.sh
+```
+
+**Step 8 — Lambda skeletons**
+
+`lambdas/process_payment/app.py` and `lambdas/confirm_booking/app.py`, each starting as:
+
+```python
+def handler(event, context):
+    return {"statusCode": 200}
+```
+
+Plus `lambdas/template.yaml` and `lambdas/samconfig.toml` from §6.1, `lambdas/requirements-dev.txt` containing `pytest`, and one smoke test `lambdas/test_handlers.py`:
+
+```python
+from process_payment.app import handler
+
+
+def test_handler_returns_200():
+    assert handler({}, None)["statusCode"] == 200
+```
+
+**Step 9 — repo hygiene + workflows**
+
+`.gitignore` at repo root:
+
+```
+.venv/
+__pycache__/
+*.pyc
+.aws-sam/
+.env
+```
+
+Add `.github/workflows/ci.yml` (§7, backend version). Hold off on `deploy-backend.yml`/`deploy-lambdas.yml` until the AWS side (§3, §5, §6) exists — a deploy workflow that can only fail is noise.
+
+**Step 10 — first push and verification**
+
+```bash
+cd ..            # back to repo root
+git add -A
+git commit -m "Scaffold backend repo: FastAPI skeleton, Alembic, deploy assets, SAM lambdas, CI"
+git push -u origin main
+```
+
+**Verify:** GitHub → Actions → the `ci` run is green: the `changes` job detects both components, `backend` runs ruff + alembic + pytest against the Postgres service container, `lambdas` runs its smoke test.
+
+**Step 11 — post-push configuration**
+
+1. Branch protection (§2.2) — the `ci / backend` and `ci / lambdas` checks are now selectable.
+2. Environments (§2.3).
+3. Invite the BE team: repo → **Settings → Collaborators** → add Thanh and Nguyen (Write), or:
+
+```bash
+gh api -X PUT repos/<GH_ORG>/court-booking-backend/collaborators/<username> -f permission=push
+```
+
+From here, Thanh & Nguyen branch off `main`, implement the routers per the unified API design ([Architecture Design §6.1](../2.1-architecture/)), and every PR gets the full quality gate automatically.
 
 ---
 
