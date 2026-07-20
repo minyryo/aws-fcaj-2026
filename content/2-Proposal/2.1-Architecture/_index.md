@@ -146,7 +146,7 @@ This section consolidates the three individual backend deliverables — Hieu's p
 | Roles & permissions (RBAC)             | Cognito Groups (`cognito:groups` claim in the JWT)                    | `roles` + `user_roles` bridge tables                    |
 | Multi-role users (player + court_manager)| A user may belong to multiple Cognito Groups                          | Many-to-many `user_roles` design                        |
 
-#### 6.1 Unified API Documentation (25 endpoints)
+#### 6.1 Unified API Documentation (31 endpoints)
 
 **Authentication — 5 endpoints** (contracts from Nguyen's design, re-implemented as FastAPI wrappers around Cognito)
 
@@ -193,6 +193,27 @@ This section consolidates the three individual backend deliverables — Hieu's p
 | 3 | `/api/v1/payments/{payment_id}`  | `GET`  | `payment_id` (path), Bearer token                                  | Full payment object                                    | Player or admin checks the status of a specific payment.                                                                       |
 | 4 | `/api/v1/payments`               | `GET`  | Bearer token; `page`, `limit`                                      | `{ data: [...payments], total, page, limit }`          | Player views their paginated payment history.                                                                                  |
 
+**Admin Operations — 3 endpoints** (added by the §6.6 revision; require the `admin` role via `cognito:groups`)
+
+| # | Endpoint | Method | Input | Output | Use Case |
+| - | -------- | ------ | ----- | ------ | -------- |
+| 1 | `/api/v1/admin/courts` | `GET` | Query: `status` (default `PENDING`), `page`, `limit` | `{ data: [...courts], total, page, limit }` | Admin views the queue of newly registered courts awaiting review before they go live. |
+| 2 | `/api/v1/admin/courts/{court_id}/review` | `PATCH` | `action` (`approve` / `reject`), `reason` (required on reject) | Updated court object | Admin flips `PENDING` → `ACTIVE` or `REJECTED`; the reason is persisted to `courts.rejection_reason` and an SNS notification goes to the court manager. |
+| 3 | `/api/v1/admin/users/{user_id}/role` | `PATCH` | `role` (`player` / `court_manager` / `admin`) | Updated user object | Admin changes a user's role **Cognito-first**: update Cognito groups (`AdminAddUserToGroup` / `AdminRemoveUserFromGroup`), then the `users.role` cache — see §6.6. |
+
+**Manager Analytics — 1 endpoint** (added by the §6.6 revision; requires the `court_manager` role)
+
+| # | Endpoint | Method | Input | Output | Use Case |
+| - | -------- | ------ | ----- | ------ | -------- |
+| 1 | `/api/v1/manager/revenue` | `GET` | Query: `date_from`, `date_to`, `court_id?`, `group_by?` (`day` / `court`) | `{ total_revenue, currency, bookings_count, breakdown? }` | Dashboard revenue: DB-level `SUM` over **`payments` with `status = 'SUCCESS'`** joined to the caller's courts (`owner_id` scoped — IDOR rule); `group_by` powers charts. Definition rationale in §6.6. |
+
+**User Profile — 2 endpoints** (added by the §6.6 revision; any authenticated user — implementation deferred, low priority)
+
+| # | Endpoint | Method | Input | Output | Use Case |
+| - | -------- | ------ | ----- | ------ | -------- |
+| 1 | `/api/v1/users/me` | `GET` | Bearer token (header) | User profile object | Current user's profile (name, phone, avatar, roles). The `me` pattern (as in `/bookings/me`) derives identity from the JWT — no user-ID parameter to attack. |
+| 2 | `/api/v1/users/me` | `PUT` | Any of: `full_name`, `phone`, `avatar_url` | Updated profile object | Update own personal information after registration. |
+
 #### 6.2 Unified Database Design (7 tables)
 
 The only structurally revised table is `users` — reshaped around Cognito as the identity authority:
@@ -214,7 +235,7 @@ The only structurally revised table is `users` — reshaped around Cognito as th
 
 > `password_hash` is intentionally absent: credentials live exclusively in Cognito. `court_images` and `payments` are carried over unchanged — full column specifications are in the [Week 2 worklog](/1-worklog/1.2-week2/). `courts` and `bookings` are modified, and two scheduling tables are added, by the Court Manager revision (§6.5):
 
-**`courts`** (modified): `status` values become `PENDING` / `ACTIVE` / `INACTIVE` / `MAINTENANCE` / `REJECTED` — manager-registered courts default to `PENDING` until an admin approves them; public search returns only `ACTIVE`.
+**`courts`** (modified): `status` values become `PENDING` / `ACTIVE` / `INACTIVE` / `MAINTENANCE` / `REJECTED` — manager-registered courts default to `PENDING` until an admin approves them; public search returns only `ACTIVE`. The §6.6 revision adds `rejection_reason VARCHAR(500)` (nullable) so a rejection's reason survives beyond the SNS notification and is visible in the manager dashboard.
 
 **`bookings`** (modified): two audit columns added for manager actions —
 
@@ -271,6 +292,7 @@ VARCHAR address
 VARCHAR sport_type
 DECIMAL price_per_hour
 VARCHAR status
+VARCHAR rejection_reason
 TIMESTAMP created_at
 TIMESTAMP updated_at
 }
@@ -363,7 +385,7 @@ WHERE (status != 'CANCELLED');
 | `users.cognito_sub`   | Nullable `UNIQUE`                                      | **`UNIQUE, NOT NULL`** — the mandatory identity link                                  |
 | `users.is_active`     | Absent                                                 | **Added** (from Nguyen) — soft delete / suspension                                    |
 | Exclusion constraint  | Unconditioned on `(court_id, tsrange)`                 | **Refined** with `WHERE (status != 'CANCELLED')` + paired with row-level locking      |
-| API surface           | 4 payment endpoints                                    | **25 endpoints** across auth, booking, court management, and payment                  |
+| API surface           | 4 payment endpoints                                    | **31 endpoints** across auth, booking, court management, payment, admin, and analytics |
 | Payment design        | —                                                      | Carried over **unchanged** (endpoints, `payments` table, 9-step flow)                 |
 
 **vs. Nguyen's version:**
@@ -401,6 +423,29 @@ The team identified a missing actor: the person who runs a court on the platform
 2. **Ownership enforced in queries, not just role checks.** Every manager endpoint filters or validates `courts.owner_id` against the caller, so manager A can never read or modify manager B's courts — the standard defense against IDOR (Insecure Direct Object Reference).
 
 **Ripple effects:** Cognito group `court_manager` replaces `court_owner`; one Alembic migration (2 new tables, `courts.status` values, 2 `bookings` columns); `GET /courts/{id}/availability` now merges schedule + blackouts + bookings; `POST /bookings` additionally validates the slot lies inside operating hours; the frontend gains a manager dashboard section.
+
+#### 6.6 Design Revision (07/19/2026) — Admin Operations & Manager Analytics
+
+Proposed by **Nguyen** and reviewed in the Week 5 team meeting: six endpoints extending §6.5, closing two gaps it left open. Adopted with the adjustments below; API grows 25 → **31 endpoints**.
+
+**Gap 1 — the approval loop had no driver.** §6.5 made manager-registered courts start at `PENDING`, but no endpoint could move them out of it: managers can only toggle approved courts, and players never see non-`ACTIVE` ones. The admin queue + review endpoints complete the state machine, with an SNS notification to the manager on every decision. The rejection reason is **persisted** (`courts.rejection_reason`) rather than living only in the notification — anything a user may need to re-read later belongs in a table, not a message.
+
+**Gap 2 — the manager dashboard had no money API.** The revenue endpoint aggregates from **`payments` with `status = 'SUCCESS'`**, not from booking totals, because the two answer different questions — *what was priced* vs. *what money is actually held*:
+
+| Scenario | Booking total says | Money reality | `payments`-based SUM |
+| --- | --- | --- | --- |
+| Confirmed and played (`COMPLETED`) | counted | held ✅ | counted ✅ |
+| `NO_SHOW` — paid, never came | counted | held ✅ | counted ✅ |
+| `CANCELLED`, refunded | counted ❌ | returned | excluded ✅ (`REFUNDED`) |
+| `PENDING`, never paid | counted ❌ | never existed | excluded ✅ |
+
+Refund-handling falls out *by construction* — no special cases. Scoping follows the §6.5 ownership rule (join through `courts.owner_id = caller`), and `group_by=day|court` lets one endpoint serve both the headline number and charts, keeping aggregation in Postgres.
+
+**Role changes are Cognito-first.** `users.role` is a cache; the authority is Cognito groups (§6). The role endpoint must therefore call `AdminAddUserToGroup`/`AdminRemoveUserFromGroup` **before** updating the DB row — a DB-only update would change the UI label while every authorization check still reads the old JWT claim. Note: already-issued JWTs keep their old `cognito:groups` until refreshed (~15 min), so a promotion takes effect on next login/refresh — expected behavior, not a bug.
+
+**Naming standardization.** Profile endpoints use `GET/PUT /users/me` (matching `/bookings/me`) instead of verb-style URLs: resources in the path, verbs in the method — and the `me` pattern removes the user-ID parameter entirely, eliminating that IDOR surface. Profile implementation is **deferred** (low priority).
+
+**Ripple effects:** one Alembic migration (`courts.rejection_reason`, nullable — backwards-compatible); ERD updated (Mermaid + drawio); the frontend gains an admin review screen and the manager dashboard's revenue chart; role-change requires the backend's IAM/SDK access to Cognito admin APIs.
 
 ### 7. Timeline & Milestones
 
