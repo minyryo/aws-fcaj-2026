@@ -18,7 +18,7 @@ Typically, and as a standard, a worklog is carried out over about 3 months (thro
 
 **Week 4:** [Cloud Quest Serverless & Monitoring Solutions, Unified API & DB Design](1.4-week4/)
 
-**Week 5:** [Doing task D...](1.5-week5/)
+**Week 5:** [Repo Init, 7-Table Schema & Court Manager Design Revision](1.5-week5/)
 
 **Week 6:** [Doing task E...](1.6-week6/)
 
