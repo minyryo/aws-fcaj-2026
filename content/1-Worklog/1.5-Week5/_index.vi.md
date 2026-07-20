@@ -53,14 +53,18 @@ Chi tiết thiết kế đầy đủ nằm trong Bản đề xuất — danh sá
 4. **Chuẩn hóa cách đặt tên**: `GET/PUT /users/me` (khớp mẫu `/bookings/me` hiện có) thay cho kiểu động từ `/users/update-profile`.
 5. **Cần bổ sung schema**: cột `courts.rejection_reason` (nullable) để lý do từ chối sân còn lưu lại sau khi thông báo đã gửi.
 
-**Quyết định & bước tiếp theo**
+**Quyết định & phân công công việc**
 
-| # | Hành động | Phụ trách |
-| - | --------- | --------- |
-| 1 | Chấp nhận cả 6 endpoint với các điều chỉnh nêu trên; tích hợp vào Bản đề xuất thành bản điều chỉnh §6.6 | Hiếu & Nguyên |
-| 2 | Tiếp tục router đặt sân trên schema đã scaffold | Thành |
-| 3 | Hoàn tất bước kiểm chứng kết nối FE–BE (health check qua CORS) và tiếp tục kết nối theo từng tính năng | Danh & Hùng |
-| 4 | Hoãn các endpoint hồ sơ người dùng (ưu tiên thấp, quay lại sau các tính năng cốt lõi) | — |
+Cả 6 endpoint được chấp nhận với các điều chỉnh nêu trên (đã tích hợp vào Bản đề xuất thành [§6.6](/vi/2-proposal/2.1-architecture/)). Hiếu ưu tiên thiết lập CI/CD, nên phần triển khai tính năng được phân công theo mảng phụ trách:
+
+| # | Hành động | Phụ trách | Ghi chú |
+| - | --------- | --------- | ------- |
+| 1 | **Thiết lập CI/CD**: `ci.yml` ở cả hai repo → bảo vệ nhánh → environments; sau đó deploy walking-skeleton lên tài khoản dev (hướng dẫn Part 0–1) | Hiếu | Ưu tiên — mở khóa quality gate cho cả nhóm |
+| 2 | Model + migration `courts.rejection_reason` (việc đầu tiên — làm theo tài liệu Alembic), sau đó **router Admin Operations** (hàng chờ, review + SNS) và **endpoint đổi vai trò theo nguyên tắc Cognito trước** | Nguyên | Đề xuất §6.6 của bạn ấy; Cognito thuộc mảng auth bạn ấy phụ trách. `ADJ_APIs.md` được thay thế bởi §6.6 |
+| 3 | **Router đặt sân** trên schema đã scaffold; sau đó **endpoint doanh thu** (`SUM` trên payments theo định nghĩa §6.6) | Thành | Doanh thu là truy vấn tổng hợp chỉ-đọc — bước tiếp nối tự nhiên sau khi quen truy vấn booking |
+| 4 | **Kiểm chứng kết nối FE–BE** (health check qua CORS); dựng **màn hình review cho admin** và **biểu đồ doanh thu** trên mock; sinh lại kiểu dữ liệu khi contract cập nhật (luồng §4.3) | Danh & Hùng | Làm trên mock trước nên không phải chờ endpoint backend |
+| 5 | Hoãn các endpoint hồ sơ người dùng (ưu tiên thấp, quay lại sau các tính năng cốt lõi) | — | |
+| 6 | Ghi nhận quyền Cognito admin (`AdminAddUserToGroup`, v.v.) cho EC2 instance role ở giai đoạn deploy | Hiếu | Bề mặt IAM mới — theo dõi trong checklist bàn giao của hướng dẫn CI/CD |
 
 ---
 
