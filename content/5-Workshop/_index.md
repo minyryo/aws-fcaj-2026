@@ -1,29 +1,51 @@
 ---
 title: "Workshop"
-date: 2024-01-01
+date: 2026-07-30
 weight: 5
 chapter: false
 pre: " <b> 5. </b> "
 ---
 
-# Secure Hybrid Access to S3 using VPC Endpoints
+# Deploying the Court Booking Application on AWS
 
-#### Overview
+#### Purpose
 
-**AWS PrivateLink** provides private connectivity to AWS services from VPCs and your on-premises networks, without exposing your traffic to the Public Internet.
+This workshop demonstrates **how we implemented the Court Booking application on AWS** — from an empty account to a running system. It is the hands-on counterpart of the design in [2.1 Architecture](../2-proposal/2.1-architecture/): every resource created here maps to a component of that architecture.
 
-In this lab, you will learn how to create, configure, and test VPC endpoints that enable your workloads to reach AWS services without traversing the Public Internet.
+The stack being deployed:
 
-You will create two types of endpoints to access Amazon S3: a Gateway VPC endpoint, and an Interface VPC endpoint. These two types of VPC endpoints offer different benefits depending on if you are accessing Amazon S3 from the cloud or your on-premises location
+- **Backend** — FastAPI (Python 3.12) on EC2 behind an Application Load Balancer, deployed via GitHub Actions → CodeDeploy
+- **Database** — Amazon RDS (PostgreSQL 16), schema managed by Alembic migrations
+- **Authentication** — Amazon Cognito (user pool + groups as roles), wrapped by the backend
+- **Frontend** — React + Vite SPA on AWS Amplify Hosting (built-in CI/CD)
+- **Configuration** — SSM Parameter Store as the single source of runtime config/secrets
 
-- **Gateway** - Create a gateway endpoint to send traffic to Amazon S3 or DynamoDB using private IP addresses.You route traffic from your VPC to the gateway endpoint using route tables.
-- **Interface** - Create an interface endpoint to send traffic to endpoint services that use a Network Load Balancer to distribute traffic. Traffic destined for the endpoint service is resolved using DNS.
+#### The two-account model
+
+The project runs across **two AWS accounts** that meet only at the control plane (IAM, DNS, TLS) — there is no VPC peering, because there is exactly one workload VPC:
+
+| Account | Holds |
+| --- | --- |
+| **Workload account** (Thanh) | VPC, EC2/ALB, RDS, Cognito, Amplify, S3, CodeDeploy |
+| **DNS / guard account** (Hieu) | Route 53 hosted zone, ACM validation records, billing guardrails |
+
+All CLI work targets the workload account through a cross-account **AssumeRole** (`--profile thanh`), set up in section 5.1. A single **`dev` environment** is used throughout (SSM path `/court-booking/dev/`, CodeDeploy group `dev`).
+
+#### Deployment order
+
+The sections follow the real dependency order — each one unblocks the next:
+
+```
+5.1 Identities (IAM · MFA · OIDC)     ← who is allowed to build & deploy
+      → 5.2 CI pipeline (quality gate on every PR)
+      → 5.3 Network + RDS             ← SG chain, database
+      → 5.4 Config & secrets (SSM)    ← how the app receives its settings
+      → 5.5 Cognito                   ← auth authority
+      → 5.6 Backend deploy            ← EC2 + CodeDeploy walking skeleton
+      → 5.7 Frontend (Amplify)        ← connect the SPA to the API
+      → 5.8 Cleanup
+```
 
 #### Content
 
-1. [Workshop overview](5.1-Workshop-overview)
-2. [Prerequiste](5.2-Prerequiste/)
-3. [Access S3 from VPC](5.3-S3-vpc/)
-4. [Access S3 from On-premises](5.4-S3-onprem/)
-5. [VPC Endpoint Policies (Bonus)](5.5-Policy/)
-6. [Clean up](5.6-Cleanup/)
+{{< children />}}
