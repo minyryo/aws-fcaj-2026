@@ -58,47 +58,50 @@ Both the monolith and the serverless functions write to the same Amazon RDS (Pos
 **Monitoring**  
 Amazon CloudWatch collects logs and metrics from both EC2 instances and Lambda functions, providing a unified view for troubleshooting and performance tracking.
 
-![Court Booking Hybrid Architecture (v3)](/images/2-Proposal/court_booking_hybrid_v3.png)
+![Court Booking Hybrid Architecture (v6)](/images/2-Proposal/court_booking_hybrid_v6.png)
 
-[View the full-resolution SVG version](/images/2-Proposal/court_booking_hybrid_v3.svg)
+#### Architecture Walkthrough — 22 Steps
 
-#### Architecture Walkthrough — 14 Steps
+> Numbering matches the badges in the architecture diagram exactly. Steps 1–13 are the request/booking and payment flows (solid arrows); steps 14–22 are the operational and CI/CD flows (dashed arrows).
 
-**Frontend & authentication (steps 1–3)**
+**Request & booking flow (steps 1–8)**
 
-| Step | Flow                          | Explanation                                                                                                                                              |
+| Step | Flow                        | Explanation                                                                                                                                                                    |
+| ---- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Player → Amazon Route 53    | **DNS lookup** — the browser resolves the application domain via Route 53.                                                                                                       |
+| 2    | Route 53 → AWS Amplify      | **Load SPA** — the domain resolves to Amplify's CDN, which serves the React + Vite frontend globally.                                                                            |
+| 3    | Player → Internet Gateway   | **API call** — the frontend calls the backend REST APIs over HTTPS (`/api/v1/...`), entering the VPC through the Internet Gateway with the Cognito JWT attached as a Bearer token. |
+| 4    | Internet Gateway → ALB      | **Route** — traffic reaches the Application Load Balancer in the public subnets.                                                                                                  |
+| 5    | ALB → EC2 (Auto Scaling Group) | **Distribute** — the ALB forwards to a healthy FastAPI instance on port 8000; the ASG scales the fleet across both AZs under load.                                            |
+| 6    | EC2 → Amazon Cognito        | **Verify JWT** — the backend validates the token against the Cognito User Pool (the backend wraps Cognito; the frontend never calls it directly).                                |
+| 7    | EC2 → Amazon RDS            | **Read / write booking** — FastAPI reads and writes `users`, `courts`, `bookings`, `payments` in PostgreSQL, applying the row-level lock + exclusion constraint to prevent double-booking. |
+| 8    | EC2 → Amazon S3             | **Court photos** — the backend issues presigned URLs; photos and static assets live in S3.                                                                                       |
+
+**Payment flow — serverless (steps 9–13)**
+
+| Step | Flow                          | Explanation                                                                                                                                             |
 | ---- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | Player → AWS Amplify          | **Visit app** — the player opens the application; the React + Vite frontend is served globally from AWS Amplify's CDN.                                    |
-| 2    | Player → Amazon Cognito       | **Login** — the player signs in (email/password or Google/Facebook) against the Cognito User Pool and receives a short-lived JWT plus a refresh token.    |
-| 3    | Amplify frontend → ELB        | **API calls** — the authenticated frontend calls the backend REST APIs (auth, courts, bookings, payments) with the JWT attached as a Bearer token.        |
+| 9    | External Payment API → API Gateway | **Webhook** — the player pays at the external gateway (VNPay / MoMo), whose callback lands on the API Gateway payment endpoint over HTTPS.            |
+| 10   | API Gateway → AWS Lambda      | **Invoke** — API Gateway invokes the payment Lambda with the webhook payload.                                                                            |
+| 11   | Lambda → Amazon RDS           | **Update payment & confirm booking** — the Lambda validates the webhook, updates the `payments` record, and sets `bookings.status = 'CONFIRMED'` (via a VPC ENI). |
+| 12   | Lambda → Amazon SNS           | **Publish** — the Lambda publishes the booking result to the SNS notifications topic.                                                                     |
+| 13   | SNS → Player                  | **Notify** — SNS delivers the confirmation (email / push) back to the player.                                                                             |
 
-**Core backend — EC2 monolith (steps 4–6)**
+**Operational & CI/CD flows (steps 14–22, dashed)**
 
-| Step | Flow                | Explanation                                                                                                                                                     |
-| ---- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 4    | ELB → Amazon EC2    | **Forward request** — the Elastic Load Balancer distributes traffic across the FastAPI instances in the Auto Scaling Group, which scales the fleet under load.     |
-| 5    | EC2 → Amazon RDS    | **Read / write booking data** — FastAPI reads and writes `users`, `courts`, `bookings`, and `payments` in PostgreSQL, applying the row-level lock + exclusion constraint to prevent double-booking. |
-| 6    | EC2 → Amazon S3     | **Read / write photos** — court photos and static assets are stored in and served from S3.                                                                         |
+| Step | Flow                          | Explanation                                                                                                       |
+| ---- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 14   | Developer → GitHub            | **Push code** — the developer pushes to the GitHub source repository.                                              |
+| 15   | GitHub → AWS Amplify          | **Build FE** — Amplify's built-in CI/CD auto-builds and deploys the frontend on every push.                        |
+| 16   | GitHub → AWS CodeDeploy       | **Deploy BE** — GitHub Actions (keyless via OIDC) triggers a backend deployment.                                   |
+| 17   | CodeDeploy → Auto Scaling Group | **Rolling deploy** — CodeDeploy rolls the new revision across the EC2 instances, health-gated by the target group. |
+| 18   | SSM Parameter Store → EC2     | **Config / secrets** — instances read runtime config and secrets from SSM at deploy time.                          |
+| 19   | EC2 → Amazon CloudWatch       | **Logs / metrics** — EC2, Lambda, and RDS push logs and metrics to CloudWatch.                                     |
+| 20   | EC2 → NAT Gateway             | **Outbound egress** — private-subnet instances reach the internet through the NAT Gateway.                         |
+| 21   | NAT Gateway → Internet Gateway | **To internet** — the NAT Gateway's traffic exits via the Internet Gateway.                                        |
+| 22   | RDS → RDS standby             | **Multi-AZ replication** — the primary database synchronously replicates to the standby in the second AZ.          |
 
-**Serverless payment path (steps 7–12)**
-
-| Step | Flow                                  | Explanation                                                                                                                                     |
-| ---- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7    | Player → Amazon API Gateway           | **Pay** — the player completes checkout with the external payment gateway, whose webhook callback lands on the API Gateway payment endpoint.        |
-| 8    | API Gateway → Lambda (Process payment) | **Invoke** — API Gateway invokes the payment-processing Lambda with the webhook payload.                                                            |
-| 9    | Lambda → Amazon RDS                   | **Write payment status** — the Lambda validates the webhook and updates the `payments` record (`SUCCESS`/`FAILED`, `transaction_id`, `gateway_response`). |
-| 10   | Lambda → Lambda (Confirm booking)     | **Trigger** — on successful payment, the processing function triggers the booking-confirmation Lambda.                                              |
-| 11   | Lambda → Amazon RDS                   | **Confirm slot** — the confirmation Lambda sets `bookings.status = 'CONFIRMED'` (or `CANCELLED` on failure), finalizing the reserved slot.          |
-| 12   | Lambda → Amazon SNS                   | **Publish** — the confirmation Lambda publishes the booking result to the SNS notifications topic.                                                  |
-
-**Notifications (steps 13–14)**
-
-| Step | Flow                    | Explanation                                                                                                       |
-| ---- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 13   | SNS → Amazon SES        | **Send email** — SNS fans out to SES, which sends the booking/payment confirmation email to the player.               |
-| 14   | SNS → Player            | **Push notify** — SNS simultaneously delivers a push notification back to the player's client for instant feedback.   |
-
-**Supporting flows (unnumbered):** the developer pushes code to the GitHub source repo (*Push code*), which Amplify picks up for **CI/CD deploy**; Amplify performs an **Auth check** against Cognito before serving protected routes; the Auto Scaling Group **scales** the EC2 fleet; EC2 and both Lambdas **push logs** to Amazon CloudWatch, where the developer **views logs and metrics**.
+> **Diagram vs deployment note:** the diagram shows the target design (Multi-AZ, NAT, private subnets). The dev environment runs a flattened version (single-AZ, public subnets, no NAT) — see the deployment runbook. The payment path currently uses a single Lambda; a future split into separate *process*/*confirm* functions is a possible optimization.
 
 ### AWS Services Used
 

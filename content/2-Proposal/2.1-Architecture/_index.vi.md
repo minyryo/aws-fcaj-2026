@@ -58,47 +58,50 @@ Cả monolith và các hàm serverless đều ghi vào cùng một cơ sở dữ
 **Giám sát**  
 Amazon CloudWatch thu thập log và số liệu từ cả EC2 và Lambda, cung cấp một giao diện thống nhất để khắc phục sự cố và theo dõi hiệu suất.
 
-![Kiến trúc Hybrid Đặt sân (v3)](/images/2-Proposal/court_booking_hybrid_v3.png)
+![Kiến trúc Hybrid Đặt sân (v6)](/images/2-Proposal/court_booking_hybrid_v6.png)
 
-[Xem phiên bản SVG độ phân giải đầy đủ](/images/2-Proposal/court_booking_hybrid_v3.svg)
+#### Diễn giải kiến trúc — 22 bước
 
-#### Diễn giải kiến trúc — 14 bước
+> Số thứ tự khớp chính xác với các badge trên diagram kiến trúc. Bước 1–13 là luồng request/đặt sân và thanh toán (mũi tên liền); bước 14–22 là luồng vận hành và CI/CD (mũi tên đứt).
 
-**Frontend & xác thực (bước 1–3)**
+**Luồng request & đặt sân (bước 1–8)**
 
-| Bước | Luồng                       | Diễn giải                                                                                                                                        |
-| ---- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | Người dùng → AWS Amplify    | **Visit app** — người dùng mở ứng dụng; frontend React + Vite được phục vụ toàn cầu từ CDN của AWS Amplify.                                          |
-| 2    | Người dùng → Amazon Cognito | **Login** — người dùng đăng nhập (email/mật khẩu hoặc Google/Facebook) qua Cognito User Pool, nhận JWT ngắn hạn kèm refresh token.                   |
-| 3    | Frontend Amplify → ELB      | **API calls** — frontend đã xác thực gọi các REST API backend (xác thực, sân, đặt sân, thanh toán) với JWT đính kèm dưới dạng Bearer token.          |
+| Bước | Luồng                          | Diễn giải                                                                                                                                                        |
+| ---- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Người dùng → Amazon Route 53   | **DNS lookup** — trình duyệt phân giải domain ứng dụng qua Route 53.                                                                                             |
+| 2    | Route 53 → AWS Amplify         | **Load SPA** — domain phân giải về CDN của Amplify, nơi phục vụ frontend React + Vite toàn cầu.                                                                  |
+| 3    | Người dùng → Internet Gateway  | **API call** — frontend gọi REST API backend qua HTTPS (`/api/v1/...`), vào VPC qua Internet Gateway với JWT Cognito đính kèm dưới dạng Bearer token.             |
+| 4    | Internet Gateway → ALB         | **Route** — lưu lượng đến Application Load Balancer trong public subnet.                                                                                          |
+| 5    | ALB → EC2 (Auto Scaling Group) | **Distribute** — ALB chuyển đến một instance FastAPI khỏe mạnh trên cổng 8000; ASG co giãn fleet trên cả hai AZ theo tải.                                         |
+| 6    | EC2 → Amazon Cognito           | **Verify JWT** — backend xác thực token với Cognito User Pool (backend bao bọc Cognito; frontend không gọi trực tiếp).                                            |
+| 7    | EC2 → Amazon RDS               | **Read / write booking** — FastAPI đọc/ghi `users`, `courts`, `bookings`, `payments` trong PostgreSQL, áp dụng row-level lock + exclusion constraint để ngăn đặt trùng sân. |
+| 8    | EC2 → Amazon S3                | **Court photos** — backend cấp presigned URL; ảnh và tài nguyên tĩnh lưu ở S3.                                                                                   |
 
-**Backend cốt lõi — EC2 monolith (bước 4–6)**
+**Luồng thanh toán — serverless (bước 9–13)**
 
-| Bước | Luồng             | Diễn giải                                                                                                                                                   |
-| ---- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 4    | ELB → Amazon EC2  | **Forward request** — Elastic Load Balancer phân phối lưu lượng đến các instance FastAPI trong Auto Scaling Group; nhóm này tự co giãn theo tải.             |
-| 5    | EC2 → Amazon RDS  | **Read / write booking data** — FastAPI đọc/ghi `users`, `courts`, `bookings`, `payments` trong PostgreSQL, áp dụng row-level lock + exclusion constraint để ngăn đặt trùng sân. |
-| 6    | EC2 → Amazon S3   | **Read / write photos** — ảnh sân và tài nguyên tĩnh được lưu trữ và phục vụ từ S3.                                                                          |
+| Bước | Luồng                              | Diễn giải                                                                                                                                    |
+| ---- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 9    | External Payment API → API Gateway | **Webhook** — người dùng thanh toán ở cổng bên ngoài (VNPay / MoMo); webhook callback đổ về endpoint thanh toán trên API Gateway qua HTTPS.    |
+| 10   | API Gateway → AWS Lambda           | **Invoke** — API Gateway gọi Lambda thanh toán với payload webhook.                                                                           |
+| 11   | Lambda → Amazon RDS                | **Update payment & confirm** — Lambda xác thực webhook, cập nhật bản ghi `payments` và đặt `bookings.status = 'CONFIRMED'` (qua VPC ENI).      |
+| 12   | Lambda → Amazon SNS                | **Publish** — Lambda phát kết quả đặt sân lên topic thông báo SNS.                                                                            |
+| 13   | SNS → Người dùng                   | **Notify** — SNS gửi xác nhận (email / push) về người dùng.                                                                                   |
 
-**Luồng thanh toán serverless (bước 7–12)**
+**Luồng vận hành & CI/CD (bước 14–22, đứt nét)**
 
-| Bước | Luồng                                   | Diễn giải                                                                                                                                  |
-| ---- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7    | Người dùng → Amazon API Gateway          | **Pay** — người dùng hoàn tất thanh toán với cổng thanh toán bên ngoài; webhook callback của cổng đổ về endpoint thanh toán trên API Gateway. |
-| 8    | API Gateway → Lambda (Process payment)   | **Invoke** — API Gateway gọi Lambda xử lý thanh toán với payload của webhook.                                                                 |
-| 9    | Lambda → Amazon RDS                      | **Write payment status** — Lambda xác thực webhook và cập nhật bản ghi `payments` (`SUCCESS`/`FAILED`, `transaction_id`, `gateway_response`). |
-| 10   | Lambda → Lambda (Confirm booking)        | **Trigger** — khi thanh toán thành công, hàm xử lý kích hoạt Lambda xác nhận đặt sân.                                                         |
-| 11   | Lambda → Amazon RDS                      | **Confirm slot** — Lambda xác nhận đặt `bookings.status = 'CONFIRMED'` (hoặc `CANCELLED` nếu thất bại), chốt khung giờ đã giữ.                |
-| 12   | Lambda → Amazon SNS                      | **Publish** — Lambda xác nhận phát kết quả đặt sân lên topic thông báo SNS.                                                                   |
+| Bước | Luồng                          | Diễn giải                                                                                                    |
+| ---- | ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| 14   | Developer → GitHub             | **Push code** — developer đẩy code lên GitHub source repo.                                                    |
+| 15   | GitHub → AWS Amplify           | **Build FE** — CI/CD tích hợp của Amplify tự build và deploy frontend ở mỗi lần push.                          |
+| 16   | GitHub → AWS CodeDeploy        | **Deploy BE** — GitHub Actions (không cần key, qua OIDC) kích hoạt deploy backend.                            |
+| 17   | CodeDeploy → Auto Scaling Group | **Rolling deploy** — CodeDeploy triển khai bản mới lần lượt trên các EC2, kiểm soát bằng health của target group. |
+| 18   | SSM Parameter Store → EC2      | **Config / secrets** — instance đọc config và secret runtime từ SSM lúc deploy.                                |
+| 19   | EC2 → Amazon CloudWatch        | **Logs / metrics** — EC2, Lambda, RDS đẩy log và metric lên CloudWatch.                                        |
+| 20   | EC2 → NAT Gateway              | **Outbound egress** — instance trong private subnet ra internet qua NAT Gateway.                              |
+| 21   | NAT Gateway → Internet Gateway | **To internet** — lưu lượng của NAT Gateway thoát ra qua Internet Gateway.                                     |
+| 22   | RDS → RDS standby              | **Multi-AZ replication** — database primary sao chép đồng bộ sang standby ở AZ thứ hai.                        |
 
-**Thông báo (bước 13–14)**
-
-| Bước | Luồng             | Diễn giải                                                                                                     |
-| ---- | ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| 13   | SNS → Amazon SES  | **Send email** — SNS chuyển tiếp đến SES để gửi email xác nhận đặt sân/thanh toán cho người dùng.               |
-| 14   | SNS → Người dùng  | **Push notify** — đồng thời SNS đẩy thông báo trực tiếp về client của người dùng để phản hồi tức thì.           |
-
-**Các luồng hỗ trợ (không đánh số):** developer đẩy code lên GitHub source repo (*Push code*), Amplify tự động **CI/CD deploy**; Amplify thực hiện **Auth check** với Cognito trước khi phục vụ các trang cần đăng nhập; Auto Scaling Group **scales** nhóm EC2; EC2 và cả hai Lambda **push logs** lên Amazon CloudWatch, nơi developer **view logs and metrics**.
+> **Lưu ý diagram vs triển khai:** diagram thể hiện thiết kế mục tiêu (Multi-AZ, NAT, private subnet). Môi trường dev chạy bản rút gọn (single-AZ, public subnet, không NAT) — xem deployment runbook. Luồng thanh toán hiện dùng một Lambda; việc tách thành hai hàm *process*/*confirm* riêng là một hướng tối ưu trong tương lai.
 
 ### Dịch vụ AWS sử dụng
 

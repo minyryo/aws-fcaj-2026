@@ -11,7 +11,7 @@ chapter: false
 
 &emsp; **Họ và tên:** Phạm Thị Hồng Hiếu
 
-&emsp; **Số điện thoại:** **\*\*\***923
+&emsp; **Số điện thoại:** 0968034923
 
 &emsp; **Email:** hieu.phamth@hcmut.edu.vn
 

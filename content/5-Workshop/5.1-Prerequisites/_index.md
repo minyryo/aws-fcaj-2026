@@ -6,7 +6,25 @@ chapter: false
 pre: " <b> 5.1. </b> "
 ---
 
-Before any resource is created, we set up **who is allowed to do what**. Three identities exist, and everything later in this workshop runs as one of them:
+### Prerequisite
+
+- **Two AWS accounts** — Hieu's (DNS/domain + the human setup identity) and Thanh's **workload account** (all infrastructure runs here). See the [two-account model](../).
+- **AWS CLI v2** installed locally, and an MFA device registered on the Hieu account.
+- Enrollment in the FCJ programme (provides the workload account's Free Tier credits).
+
+### Aims
+
+| Aim | Status | Note |
+| --- | --- | --- |
+| Human setup identity that assumes into the workload account **with MFA** (no shared keys) | ✅ Done | |
+| A broad, MFA-gated **admin role** for building infrastructure | ✅ Done | Broad on purpose — a *setup* role, not a runtime one |
+| **Keyless CI** deploy roles via GitHub OIDC (`gh-deploy-backend` / `gh-deploy-lambdas`) | ✅ Done | Backend role later extended with `ec2:DescribeInstances` for the SSM deploy path (§5.6) |
+
+---
+
+### Actual implementation steps
+
+Three identities exist, and everything later in this workshop runs as one of them:
 
 | Identity | Kind | Used for |
 | --- | --- | --- |
@@ -14,7 +32,7 @@ Before any resource is created, we set up **who is allowed to do what**. Three i
 | `court-booking-admin` | IAM role, workload account | cross-account AssumeRole target for all infra work |
 | `gh-deploy-backend` / `gh-deploy-lambdas` | IAM roles, workload account | *keyless* CI deploys via GitHub OIDC |
 
-The detailed policies live in the repo guide (`cicd-setup-guide.md` §1.0–§1.3); this page shows the result and the problems we hit.
+The detailed policies live in the repo guide (`cicd-setup-guide.md` §1.0–§1.3); this page shows the result.
 
 #### 1. Human identity: cross-account AssumeRole with MFA
 
@@ -38,23 +56,7 @@ Verification — `get-caller-identity` must show the **assumed role**, not the I
 
 ![Verify AssumeRole](/images/5-Workshop/5.1/iam-verify_assumeRole.png)
 
-{{% notice warning %}}
-**Error we hit: MFA device name mismatch.** The CLI kept rejecting MFA codes because `mfa_serial` in `~/.aws/config` said `.../mfa/hieu-cli` while the actual device was registered as `.../mfa/hieu-cli-ip16pm`. The MFA serial is an exact ARN — verify the identifier in the IAM console and copy it verbatim.
-{{% /notice %}}
-
-![MFA wrong device name](/images/5-Workshop/5.1/error-iam-mfa-wrong_device_name.png)
-
-Fix — check the real device identifier, then update the config:
-
-![Verify MFA identifier](/images/5-Workshop/5.1/error-iam-mfa-wrong_device_name-solution-verify_identifier.png)
-
-![Update aws config](/images/5-Workshop/5.1/error-iam-mfa-wrong_device_name-solution-update_aws_config.png)
-
 #### 2. The admin role's permissions
-
-The first policy attempt was too narrow, producing a chain of `AccessDenied` ("permission whack-a-mole") — each new AWS service needed another statement:
-
-![Not authorized error](/images/5-Workshop/5.1/error-iam-not_authorized.png)
 
 For a *setup* role (not a runtime role) we settled on broad admin permissions — this identity exists to build the infrastructure, is MFA-gated, and is not used by any pipeline:
 
@@ -68,8 +70,26 @@ Deploy pipelines never hold access keys. GitHub Actions exchanges its **OIDC tok
 
 ![gh-deploy-lambdas role](/images/5-Workshop/5.1/iam_role_gh-deploy-lambdas.png)
 
-The backend role can only: upload to the deploy bucket, trigger CodeDeploy, and run the SSM migration command. The lambda role is scoped to SAM/CloudFormation. Least privilege here is real — these roles run unattended on every push.
+The backend role can only upload to the deploy bucket, describe instances, and run the SSM deploy command; the lambda role is scoped to SAM/CloudFormation. Least privilege here is real — these roles run unattended on every push.
 
 {{% notice note %}}
-**Secret hygiene**, enforced throughout the project: no access keys in any repo (OIDC removes the need), runtime secrets only in SSM Parameter Store (section 5.4), and the local `infra/.env` holding the DB password is gitignored.
+**Secret hygiene**, enforced throughout the project: no access keys in any repo (OIDC removes the need), runtime secrets only in SSM Parameter Store (§5.4), and the local `infra/.env` holding the DB password is gitignored.
 {{% /notice %}}
+
+---
+
+### Errors encountered
+
+**1. MFA device name mismatch.** The CLI kept rejecting MFA codes because `mfa_serial` in `~/.aws/config` said `.../mfa/hieu-cli` while the actual device was registered as `.../mfa/hieu-cli-ip16pm`. The MFA serial is an exact ARN — verify the identifier in the IAM console and copy it verbatim.
+
+![MFA wrong device name](/images/5-Workshop/5.1/error-iam-mfa-wrong_device_name.png)
+
+*Fix — check the real device identifier, then update the config:*
+
+![Verify MFA identifier](/images/5-Workshop/5.1/error-iam-mfa-wrong_device_name-solution-verify_identifier.png)
+
+![Update aws config](/images/5-Workshop/5.1/error-iam-mfa-wrong_device_name-solution-update_aws_config.png)
+
+**2. `AccessDenied` "permission whack-a-mole".** The first admin-role policy was too narrow — each new AWS service raised another `AccessDenied`. Resolved by granting the setup role broad admin permissions (justified above: MFA-gated, human-only, never used by a pipeline).
+
+![Not authorized error](/images/5-Workshop/5.1/error-iam-not_authorized.png)

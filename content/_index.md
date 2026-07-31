@@ -13,7 +13,7 @@ chapter: false
 
 &emsp; **Full Name:** Pham Thi Hong Hieu
 
-&emsp; **Phone Number:** **\*\*\***923
+&emsp; **Phone Number:** 0968034923
 
 &emsp; **Email:** hieu.phamth@hcmut.edu.vn
 
@@ -27,7 +27,7 @@ chapter: false
 
 &emsp; **Internship Position:** Workforce Bootcamp - First Cloud AI Journey
 
-&emsp; **Internship Duration:** From 30/06/2026 to 30/09/2026
+&emsp; **Internship Duration:** From 30/06/2026 to 14/08/2026
 
 <!-- ![Your profile picture](/images/avatar.png) -->
 
