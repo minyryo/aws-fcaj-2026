@@ -1,22 +1,13 @@
 ---
 title: "Blogs Posted"
-date: 2024-01-01
+date: 2026-07-31
 weight: 3
 chapter: false
 pre: " <b> 3. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your own report, including this warning.
-{{% /notice %}}
+This section lists and introduces the blogs I posted to the [AWS Study Group](https://www.facebook.com/groups/awsstudygroupfcj).
 
-This section will list and introduce the blogs you have posted to [AWS Study Group](https://www.facebook.com/groups/awsstudygroupfcj). For example:
+### [Blog 1 — Architecture Diagram Best Practices](3.1-Architecture-Diagram/)
 
-###  [Blog 1 - SESSION POLICIES IN AMAZON EKS POD IDENTITY](3.1-Blog1/)
-This blog introduces the newly added session policies feature in Amazon EKS Pod Identity, which allows you to narrow IAM permissions flexibly and precisely for each pod without needing to create multiple separate IAM roles. This is an important step forward that helps apply the principle of least privilege more effectively in large-scale Kubernetes environments.
-
-###  [Blog 2 - ...](3.2-Blog2/)
-This blog introduces the newly added session policies feature in Amazon EKS Pod Identity, which allows you to narrow IAM permissions flexibly and precisely for each pod without needing to create multiple separate IAM roles. This is an important step forward that helps apply the principle of least privilege more effectively in large-scale Kubernetes environments.
-
-###  [Blog 3 - ...](3.3-Blog3/)
-This blog introduces the newly added session policies feature in Amazon EKS Pod Identity, which allows you to narrow IAM permissions flexibly and precisely for each pod without needing to create multiple separate IAM roles. This is an important step forward that helps apply the principle of least privilege more effectively in large-scale Kubernetes environments.
+A practical guide to drawing professional AWS architecture diagrams, drawn from mentor feedback on this project and a draw.io tutorial. It covers the rules that make a diagram survive review: using the official current icon set, respecting the resource hierarchy (Cloud → Region → VPC → AZ → Subnet), placing each service in its correct scope (global / regional / VPC-bound), keeping non-AWS actors outside the cloud boundary, showing the network path clearly, and maintaining a consistent visual language.

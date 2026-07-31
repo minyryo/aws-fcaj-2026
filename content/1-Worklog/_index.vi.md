@@ -1,14 +1,12 @@
 ---
 title: "Nhật ký công việc"
-date: 2024-01-01
+date: 2026-07-31
 weight: 1
 chapter: false
 pre: " <b> 1. </b> "
 ---
 
-**Trong trang này** bạn sẽ cần giới thiệu worklog của bạn **như thế nào**? Bạn hoàn thành chương trình trong vòng **bao nhiêu tuần**? Bạn **đã làm gì** trong các tuần đó?
-
-Thông thường và cũng là tiêu chuẩn, một worklog được thực hiện trong khoảng 3 tháng (trong suốt thời gian thực tập) với nội dung các tuần như sau:
+Phần này ghi lại tiến độ theo tuần trong suốt kỳ thực tập — mỗi tuần tôi làm gì, các quyết định đã đưa ra, và các buổi họp nhóm. Worklog diễn ra theo từng tuần như sau:
 
 **Tuần 1:** [Làm quen với AWS và các dịch vụ cơ bản trong AWS](1.1-week1/)
 
@@ -20,16 +18,6 @@ Thông thường và cũng là tiêu chuẩn, một worklog được thực hi�
 
 **Tuần 5:** [Khởi tạo repo, Schema 7 bảng & Điều chỉnh thiết kế Court Manager](1.5-week5/)
 
-**Tuần 6:** [Làm công việc E...](1.6-week6/)
+**Tuần 6:** [IAM liên account, CI Pipeline & Triển khai API Backend](1.6-week6/)
 
-**Tuần 7:** [Làm công việc G...](1.7-week7/)
-
-**Tuần 8:** [Làm công việc H...](1.8-week8/)
-
-**Tuần 9:** [Làm công việc I...](1.9-week9/)
-
-**Tuần 10:** [Làm công việc L...](1.10-week10/)
-
-**Tuần 11:** [Làm công việc M...](1.11-week11/)
-
-**Tuần 12:** [Làm công việc N...](1.12-week12/)
+**Tuần 7:** [Hạ tầng AWS, Deploy Backend & Chỉnh sửa kiến trúc](1.7-week7/)
