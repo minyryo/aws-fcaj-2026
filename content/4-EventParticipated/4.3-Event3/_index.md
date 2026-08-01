@@ -31,10 +31,10 @@ The FCAJ x Agentic AI Build Week was an intensive hackathon run in collaboration
 
 ### Team Presentations & Highlights
 
-**1. One Team — 🥇 First Prize**
+**1. One Team**
 An *AI-powered conversational ordering agent* for F&B brands (e.g. KFC). The team built a multi-channel chatbot that lets customers order food directly inside messaging apps like Zalo — no separate app, no account needed. Using **Amazon Bedrock** and **AgentCore**, the bot keeps user context, handles natural conversation, and processes orders securely, removing friction from the ordering flow.
 
-**2. Signal Scout — 🥈 Second Prize**
+**2. Signal Scout**
 A *competitive-intelligence and business-strategy agent*. It scrapes and analyses scattered public data (financial reports, structural changes) about competitors to help strategists judge whether adopting a similar model would be profitable — automatically forecasting revenue upside and risk, and cutting the time executives spend on manual research.
 
 **3. Team Plan**
